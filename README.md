@@ -1,6 +1,6 @@
 # Cartographie des risques du réseau Procivis
 
-Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à être hébergée sur GitHub Pages. Les administrateurs flashent un QR code, s'identifient en quelques secondes, évaluent la maîtrise du dispositif et cotent les risques univers par univers. Une page de résultats agrège les réponses en direct pour l'animation.
+Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à être hébergée sur GitHub Pages. Les administrateurs flashent un QR code, s'identifient en quelques secondes, évaluent la maîtrise des risques et cotent les risques univers par univers. Une page de résultats agrège les réponses en direct pour l'animation.
 
 ## Fichiers
 
@@ -20,11 +20,11 @@ Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à �
 
 - `#/` accueil et identification (société, fonction, prénom facultatif, périmètre)
 - `#/univers` liste des univers avec progression et état d'envoi
-- `#/u/GOV` saisie d'un univers : maîtrise, cotation (probabilité, impact, traitement), remarques
+- `#/u/GOV` saisie d'un univers : maîtrise des risques (avec une question libre à proposer), cotation des risques (probabilité, impact, traitement), remarques
 - `#/aide` échelles de cotation et cadre juridique
-- `#/resultats` page animateur : filtres, indicateurs, matrice, top 10, divergences, remarques, exports
+- `#/resultats` page animateur : filtres, indicateurs, matrice, top 10, divergences, questions proposées, remarques, exports
 
-Chaque univers est enregistré séparément : une réponse partielle compte. Les réponses sont aussi conservées sur l'appareil, ce qui permet de reprendre plus tard et de renvoyer automatiquement ce qui n'a pas pu partir.
+Chaque univers est enregistré séparément : une réponse partielle compte. La question libre proposée dans un univers est stockée dans le champ `maitrise` (clé `_question`), sans colonne supplémentaire dans Supabase ; elle apparaît dans la page de résultats et dans les exports CSV. Les réponses sont aussi conservées sur l'appareil, ce qui permet de reprendre plus tard et de renvoyer automatiquement ce qui n'a pas pu partir.
 
 ## Brancher Supabase
 

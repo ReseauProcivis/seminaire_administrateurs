@@ -12,7 +12,7 @@ create table if not exists public.reponses (
   perimetre text,
   metiers jsonb,
   univers text not null,
-  maitrise jsonb not null default '{}'::jsonb,
+  maitrise jsonb not null default '{}'::jsonb,   -- réponses par question ; la clé _question porte la question libre proposée par le participant
   cotation jsonb not null default '{}'::jsonb,
   remarques text,
   version_ref text,

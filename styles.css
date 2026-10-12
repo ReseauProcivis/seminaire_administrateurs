@@ -103,6 +103,8 @@ details.cadre summary { cursor: pointer; color: var(--accent-bleu); font-weight:
 .q { padding: 14px 0; border-top: 1px solid var(--gris-clair); }
 .q:first-of-type { border-top: 0; }
 .q p { margin: 0 0 10px; }
+.q.libre label { display: block; margin: 0 0 8px; }
+.q.libre .muted { font-weight: 400; }
 .pills { display: flex; flex-wrap: wrap; gap: 8px; }
 .pill { min-height: 44px; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--bordure); background: #fff; color: var(--encre-2); cursor: pointer; font-weight: 500; font-size: .92rem; }
 .pill:hover { border-color: var(--vert-fonce); }

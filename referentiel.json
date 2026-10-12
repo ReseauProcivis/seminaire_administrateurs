@@ -1,6 +1,6 @@
 {
- "version": "2026-10-12-v2-atelier-paris",
- "source": "Référentiel de Guillaume Macher (12 octobre 2026) revu avec les remarques des groupes marchés et fonctions support de l'atelier du 12 octobre",
+ "version": "2026-10-12-v3-reunion-equipe",
+ "source": "Référentiel de Guillaume Macher (12 octobre 2026) revu avec les remarques des groupes marchés et fonctions support de l'atelier du 12 octobre, puis avec les décisions de la réunion d'équipe Procivis UES-AP du 12 octobre (relevé de décision dicté par Guillaume Macher)",
  "echelles": {
   "maitrise": [
    {
@@ -181,11 +181,11 @@
     },
     {
      "id": "GOV-2",
-     "libelle": "Dépendance à un dirigeant, à une filiale ou à un métier unique"
+     "libelle": "Dépendance à un dirigeant unique"
     },
     {
-     "id": "GOV-3",
-     "libelle": "Désalignement stratégique entre la SACICAP et Procivis UES-AP"
+     "id": "GOV-7",
+     "libelle": "Dépendance à un métier unique"
     },
     {
      "id": "GOV-4",
@@ -194,6 +194,10 @@
     {
      "id": "GOV-5",
      "libelle": "Dilution du projet coopératif et perte de lisibilité du modèle auprès des parties prenantes"
+    },
+    {
+     "id": "GOV-6",
+     "libelle": "Non-respect des recommandations en matière de parité dans les instances"
     }
    ]
   },
@@ -207,21 +211,25 @@
    "intro": "Respect de l'objet social, de la convention avec l'État et des règles coopératives.",
    "questions": [
     {
+     "id": "JUR-Q1",
+     "texte": "Les engagements de la convention avec l'État et les obligations vis-à-vis de Procivis UES-AP sont suivis par une personne identifiée."
+    },
+    {
      "id": "JUR-Q3",
-     "texte": "La SACICAP respecte ses obligations coopératives (capital, parts sociales, réserves, affectation du résultat).",
-     "texte_reseau": "Les SACICAP respectent leurs obligations coopératives (capital, parts sociales, réserves, affectation du résultat)."
+     "texte": "La SACICAP respecte ses obligations coopératives (capital, parts sociales, réserves, affectation du résultat, révision coopérative).",
+     "texte_reseau": "Les SACICAP respectent leurs obligations coopératives (capital, parts sociales, réserves, affectation du résultat, révision coopérative)."
     },
     {
      "id": "JUR-Q5",
      "texte": "L'objet social de la SACICAP est connu des administrateurs et sa réalisation est vérifiée."
     },
     {
-     "id": "JUR-Q6",
-     "texte": "La révision coopérative est réalisée à la fréquence prévue et ses recommandations sont suivies."
+     "id": "JUR-Q4",
+     "texte": "La capacité de l'État à faire évoluer le statut des SACICAP est suivie et ses effets sont anticipés."
     },
     {
-     "id": "JUR-Q4",
-     "texte": "Les projets d'évolution du statut des SACICAP sont suivis et leurs effets sont anticipés."
+     "id": "JUR-Q7",
+     "texte": "Une veille réglementaire couvre aussi la fiscalité."
     }
    ],
    "risques": [
@@ -243,7 +251,7 @@
     },
     {
      "id": "JUR-5",
-     "libelle": "Application hétérogène du statut d'une SACICAP à l'autre, source de divergences dans le réseau"
+     "libelle": "Application hétérogène de l'objet social et du règlement intérieur par les SACICAP, pour ce qui concerne notamment leur activité économique"
     }
    ]
   },
@@ -266,7 +274,7 @@
     },
     {
      "id": "CONF-Q3",
-     "texte": "Un registre des traitements RGPD est tenu et un référent est désigné."
+     "texte": "Un registre des traitements RGPD est tenu, la transparence des traitements est assurée auprès des personnes et un référent est désigné."
     },
     {
      "id": "CONF-Q4",
@@ -296,11 +304,11 @@
     },
     {
      "id": "CONF-4",
-     "libelle": "Contentieux majeur"
+     "libelle": "Contentieux majeur avec un client, un partenaire ou un salarié"
     },
     {
      "id": "CONF-5",
-     "libelle": "Irrégularité dans une procédure d'achat interne"
+     "libelle": "Irrégularité dans une procédure d'achat interne ou de mise en concurrence pour le secteur HLM"
     }
    ]
   },
@@ -315,7 +323,7 @@
    "questions": [
     {
      "id": "FIN-Q1",
-     "texte": "Un plan de trésorerie glissant à plus de 24 mois est tenu et présenté à la direction."
+     "texte": "Un plan de trésorerie de 12 à 24 mois est tenu et présenté à la direction."
     },
     {
      "id": "FIN-Q2",
@@ -326,18 +334,14 @@
      "texte": "La santé financière des filiales et participations fait l'objet d'un reporting régulier avec seuils d'alerte."
     },
     {
-     "id": "FIN-Q4",
-     "texte": "Une politique de placement des excédents de trésorerie est validée par le conseil."
-    },
-    {
      "id": "FIN-Q5",
-     "texte": "Des scénarios de stress (hausse des taux, chute des ventes, défaillance d'une filiale) sont modélisés sur les fonds propres."
+     "texte": "Des scénarios de stress (hausse des taux, chute des ventes, défaillance d'une filiale) sont modélisés."
     }
    ],
    "risques": [
     {
      "id": "FIN-1",
-     "libelle": "Dépréciation des titres de filiales ou de participations"
+     "libelle": "Dépréciation inadéquate des titres de filiales ou de participations"
     },
     {
      "id": "FIN-2",
@@ -349,60 +353,15 @@
     },
     {
      "id": "FIN-4",
-     "libelle": "Retrait ou fin du soutien d'un partenaire financier, ou perte de valeur d'un placement"
+     "libelle": "Retrait ou fin du soutien d'un partenaire financier"
     },
     {
      "id": "FIN-5",
-     "libelle": "Tension de trésorerie"
-    }
-   ]
-  },
-  {
-   "code": "REP",
-   "nom": "Marque Procivis",
-   "court": "Marque Procivis",
-   "bloc": "soc",
-   "metiers": [],
-   "reference": "Marque Procivis, UES-AP",
-   "intro": "La marque Procivis est portée par Procivis UES-AP et utilisée par une partie des sociétés du réseau : un incident local peut rejaillir sur l'ensemble.",
-   "questions": [
-    {
-     "id": "REP-Q1",
-     "texte": "L'usage de la marque Procivis par les sociétés du réseau est encadré."
+     "libelle": "Tension de trésorerie ou difficultés liées à la défaillance d'un débiteur"
     },
     {
-     "id": "REP-Q2",
-     "texte": "Un dispositif de gestion de crise et de communication est coordonné entre les sociétés du réseau."
-    },
-    {
-     "id": "REP-Q3",
-     "texte": "Une procédure de remontée des incidents graves à Procivis UES-AP existe et est connue."
-    },
-    {
-     "id": "REP-Q4",
-     "texte": "La qualité de service et la satisfaction des clients sont mesurées de façon homogène."
-    }
-   ],
-   "risques": [
-    {
-     "id": "REP-1",
-     "libelle": "Contagion d'une crise locale à toute la marque Procivis"
-    },
-    {
-     "id": "REP-2",
-     "libelle": "Usage non conforme de la marque ou des logos, par une société du réseau ou par un tiers"
-    },
-    {
-     "id": "REP-3",
-     "libelle": "Qualité de service hétérogène entre agences et sociétés"
-    },
-    {
-     "id": "REP-4",
-     "libelle": "Mise en cause médiatique sur l'exercice des métiers (gestion, syndic, transaction, promotion)"
-    },
-    {
-     "id": "REP-5",
-     "libelle": "Perte de confiance des pouvoirs publics et des partenaires institutionnels"
+     "id": "FIN-6",
+     "libelle": "Défaillance d'une SACICAP ou d'une de ses filiales"
     }
    ]
   },
@@ -437,21 +396,21 @@
     },
     {
      "id": "RH-Q6",
-     "texte": "Les obligations en matière d'égalité professionnelle femmes-hommes et de prévention du harcèlement sont respectées et suivies."
+     "texte": "Les obligations en matière d'égalité professionnelle femmes-hommes et de prévention et de lutte contre le harcèlement et les discriminations sont respectées et suivies."
     }
    ],
    "risques": [
     {
      "id": "RH-1",
-     "libelle": "Départ d'une compétence clé (montage, finance, direction)"
+     "libelle": "Départ d'une compétence clé"
     },
     {
      "id": "RH-2",
-     "libelle": "Difficulté de recrutement sur les métiers en tension (négociateurs, gestionnaires, syndics)"
+     "libelle": "Difficulté de recrutement sur les métiers en tension"
     },
     {
      "id": "RH-3",
-     "libelle": "Accident du travail (chantiers, visites, déplacements)"
+     "libelle": "Accident du travail"
     },
     {
      "id": "RH-4",
@@ -463,14 +422,14 @@
     },
     {
      "id": "RH-6",
-     "libelle": "Situation de harcèlement ou manquement à l'égalité professionnelle"
+     "libelle": "Situation de harcèlement, de discrimination ou manquement à l'égalité professionnelle"
     }
    ]
   },
   {
    "code": "CYB",
-   "nom": "Cyber, données, continuité et crise",
-   "court": "Cyber et crise",
+   "nom": "Cyber, informatique et data",
+   "court": "Cyber et data",
    "bloc": "soc",
    "metiers": [],
    "reference": "RGPD ; continuité d'activité",
@@ -495,10 +454,6 @@
     {
      "id": "CYB-Q5",
      "texte": "Les usages de l'intelligence artificielle sont encadrés par une charte (données confidentielles, relecture)."
-    },
-    {
-     "id": "CYB-Q6",
-     "texte": "Les prestataires informatiques sont contrôlés (contrats, sécurité, réversibilité)."
     }
    ],
    "risques": [
@@ -546,6 +501,10 @@
      "texte": "La trajectoire énergétique du patrimoine détenu est connue et chiffrée."
     },
     {
+     "id": "RSE-Q9",
+     "texte": "Les étiquettes énergétiques du patrimoine géré sont connues et des actions de sensibilisation des propriétaires sont menées."
+    },
+    {
      "id": "RSE-Q3",
      "texte": "Les risques climatiques physiques (inondation, argiles, chaleur) sont évalués sur les opérations et le patrimoine."
     },
@@ -573,19 +532,15 @@
     },
     {
      "id": "RSE-2",
-     "libelle": "Sinistres liés aux aléas climatiques (argiles, inondations)"
+     "libelle": "Sinistres liés aux aléas climatiques (argiles, inondations, sécheresse, manque d'eau)"
     },
     {
      "id": "RSE-3",
-     "libelle": "Non-conformité aux exigences bas carbone des constructions neuves"
+     "libelle": "Non-anticipation des seuils carbone à venir et des attentes clients en la matière"
     },
     {
      "id": "RSE-4",
      "libelle": "Évolution défavorable des aides à la rénovation"
-    },
-    {
-     "id": "RSE-5",
-     "libelle": "Communication environnementale contestée (greenwashing)"
     },
     {
      "id": "RSE-6",
@@ -597,7 +552,7 @@
     },
     {
      "id": "RSE-8",
-     "libelle": "Écart entre les valeurs coopératives affichées et les pratiques sociales ou de gouvernance"
+     "libelle": "Écart entre les valeurs coopératives affichées et les pratiques sociales, de gouvernance et environnementales (greenwashing)"
     },
     {
      "id": "RSE-9",
@@ -614,10 +569,6 @@
    "reference": "Convention avec l'État ; CCH L.215-1",
    "intro": "Engagements pris au titre de la convention avec l'État.",
    "questions": [
-    {
-     "id": "MS-Q5",
-     "texte": "Les engagements de la convention avec l'État et les obligations vis-à-vis de Procivis UES-AP sont suivis par une personne identifiée."
-    },
     {
      "id": "MS-Q6",
      "texte": "La relation avec l'État est pilotée et débouche sur des opportunités de partenariat tangibles."

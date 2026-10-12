@@ -59,7 +59,7 @@
     return u.filter(x => !x.metiers.length || x.metiers.some(m => p.metiers.includes(m)));
   };
   const parCode = code => S.ref.univers.find(u => u.code === code);
-  const mesU = code => (S.mes[code] = S.mes[code] || { maitrise: {}, cotation: {}, remarques: "", modifie: null, envoye: null });
+  const mesU = code => (S.mes[code] = S.mes[code] || { maitrise: {}, cotation: {}, remarques: "", question: "", modifie: null, envoye: null });
 
   function progression(u) {
     const m = S.mes[u.code] || { maitrise: {}, cotation: {} };
@@ -227,7 +227,7 @@
         </details>
       </div>
       <div class="panel">
-        <div class="section-titre"><span class="num">1</span><h2>Maîtrise du dispositif</h2></div>
+        <div class="section-titre"><span class="num">1</span><h2>Maîtrise des risques</h2></div>
         <p class="small muted">${u.questions.length} mesures à qualifier selon ce qui existe réellement aujourd'hui. « Je ne sais pas » est une réponse acceptée.</p>
         ${u.questions.map(q => `
           <div class="q" data-q="${q.id}">
@@ -236,10 +236,13 @@
               ${E.maitrise.map(a => `<button type="button" class="pill${isNaN(Number(a.v)) ? " na" : ""}${m.maitrise[q.id] !== undefined && String(m.maitrise[q.id]) === String(a.v) ? " on" : ""}" data-act="maitrise" data-q="${q.id}" data-v="${a.v}">${t(a.l)}</button>`).join("")}
             </div>
           </div>`).join("")}
+        <div class="q libre">
+          <label for="question-libre"><strong>Ajouter une question</strong> <span class="muted">Une mesure de maîtrise manque dans cette liste ? Proposez-la, elle sera enregistrée avec vos réponses (facultatif).</span></label>
+          <input type="text" id="question-libre" maxlength="300" placeholder="Votre question" value="${esc(m.question || "")}">
+        </div>
       </div>
       <div class="panel">
         <div class="section-titre"><span class="num">2</span><h2>Cotation des risques</h2></div>
-        <p class="small muted">${u.risques.length} risques. Probabilité et impact de 1 à 4, en tenant compte des mesures déjà en place. Puis votre décision : <strong>Accepter</strong> (on vit avec le risque à son niveau actuel) ou <strong>Réduire</strong> (un plan d'action est nécessaire). La décision ne modifie pas la note, elle est comptée à part dans les résultats.</p>
         ${u.risques.map(r => {
           const c = m.cotation[r.id] || {};
           return `
@@ -285,11 +288,14 @@
   async function enregistrer(code, suite) {
     const u = parCode(code), m = mesU(code), p = S.participant;
     const pr = progression(u);
-    if (pr.fait === 0 && !(m.remarques || "").trim()) { toast("Rien à enregistrer pour cet univers."); return; }
+    const question = (m.question || "").trim().slice(0, 300);
+    if (pr.fait === 0 && !(m.remarques || "").trim() && !question) { toast("Rien à enregistrer pour cet univers."); return; }
     const row = {
       session: SESSION, participant_id: p.id, prenom: p.prenom || null, societe: p.societe, fonction: p.fonction,
       perimetre: p.perimetre, metiers: p.perimetre === "sacicap" ? p.metiers : null, univers: code,
-      maitrise: m.maitrise, cotation: m.cotation, remarques: (m.remarques || "").trim() || null, version_ref: S.ref.version
+      // La question proposée par le participant voyage dans le jsonb « maitrise » sous la clé _question (ignorée par l'agrégation des notes)
+      maitrise: question ? { ...m.maitrise, _question: question } : m.maitrise,
+      cotation: m.cotation, remarques: (m.remarques || "").trim() || null, version_ref: S.ref.version
     };
     setStatut("busy", "Enregistrement");
     try {
@@ -319,7 +325,7 @@
     return `
       <div class="rhead"><div class="nav"><button class="btn lien" data-act="retour">← Retour</button></div><h1>Cadre de référence</h1></div>
       <div class="panel">
-        <h2>Maîtrise du dispositif</h2>
+        <h2>Maîtrise des risques</h2>
         <table class="echelle"><tr><th>Réponse</th><th>Sens</th></tr>
           <tr><td><strong>Non</strong></td><td>La mesure n'existe pas.</td></tr>
           <tr><td><strong>En partie</strong></td><td>Elle existe de façon informelle ou incomplète.</td></tr>
@@ -401,7 +407,7 @@
   }
 
   function agreger(rows) {
-    const U = {}; S.ref.univers.forEach(u => U[u.code] = { u, n: 0, mat: [], parQ: {}, remarques: [] });
+    const U = {}; S.ref.univers.forEach(u => U[u.code] = { u, n: 0, mat: [], parQ: {}, remarques: [], questions: [] });
     const R = {}; S.ref.univers.forEach(u => u.risques.forEach(r => R[r.id] = { r, u, p: [], i: [], c: [], acc: 0, red: 0 }));
     const participants = new Set(), societes = new Set();
     rows.forEach(row => {
@@ -411,7 +417,10 @@
       const vals = [];
       Object.entries(row.maitrise || {}).forEach(([q, v]) => { if (typeof v === "number") { vals.push(v); (cu.parQ[q] = cu.parQ[q] || []).push(v); } });
       if (vals.length) cu.mat.push(moy(vals) / 3);
-      if (row.remarques && String(row.remarques).trim()) cu.remarques.push({ texte: String(row.remarques).trim(), qui: [row.prenom, row.societe, row.fonction].filter(Boolean).join(" · "), date: row.created_at });
+      const qui = [row.prenom, row.societe, row.fonction].filter(Boolean).join(" · ");
+      if (row.remarques && String(row.remarques).trim()) cu.remarques.push({ texte: String(row.remarques).trim(), qui, date: row.created_at });
+      const ql = row.maitrise && typeof row.maitrise._question === "string" ? row.maitrise._question.trim() : "";
+      if (ql) cu.questions.push({ texte: ql, qui, date: row.created_at });
       Object.entries(row.cotation || {}).forEach(([id, c]) => {
         const cr = R[id]; if (!cr || !c) return;
         if (c.p && c.i) { cr.p.push(c.p); cr.i.push(c.i); cr.c.push(c.p * c.i); }
@@ -421,7 +430,7 @@
     const risques = Object.values(R).map(x => ({ ...x, n: x.c.length, mp: moy(x.p), mi: moy(x.i), mc: moy(x.c), sd: ecartType(x.c), min: x.c.length ? Math.min(...x.c) : null, max: x.c.length ? Math.max(...x.c) : null, pctRed: (x.acc + x.red) ? x.red / (x.acc + x.red) : null }));
     const univers = Object.values(U).map(x => ({ ...x, maturite: moy(x.mat), expo: moy(risques.filter(r => r.u.code === x.u.code && r.n).map(r => r.mc)) }));
     return {
-      participants: participants.size, societes: societes.size, reponses: rows.length, univers, risques,
+      participants: participants.size, societes: societes.size, reponses: univers.reduce((s, u) => s + u.n, 0), univers, risques,
       maturite: moy(univers.filter(u => u.maturite !== null).map(u => u.maturite)),
       expo: moy(risques.filter(r => r.n).map(r => r.mc)),
       couverts: univers.filter(u => u.n > 0).length
@@ -467,6 +476,7 @@
     const top = A.risques.filter(r => r.n).sort((a, b) => b.mc - a.mc || b.n - a.n).slice(0, 10);
     const diverg = A.risques.filter(r => r.n >= 2).sort((a, b) => b.sd - a.sd).slice(0, 6);
     const remarques = A.univers.flatMap(u => u.remarques.map(x => ({ ...x, u: u.u })));
+    const questionsLibres = A.univers.flatMap(u => u.questions.map(x => ({ ...x, u: u.u })));
     const tipR = r => `${r.r.id} · ${fr(r.r.libelle)}\nProbabilité ${fmt1(r.mp)} · Impact ${fmt1(r.mi)} · Criticité ${fmt1(r.mc)}\n${r.n} cotation${r.n > 1 ? "s" : ""} · Réduire : ${pct(r.pctRed)}`;
 
     let h = `
@@ -494,14 +504,14 @@
         <div class="kpi"><div class="v">${A.reponses}</div><div class="l">univers renseignés</div></div>
         <div class="kpi"><div class="v">${A.societes}</div><div class="l">société${A.societes > 1 ? "s" : ""} représentée${A.societes > 1 ? "s" : ""}</div></div>
         <div class="kpi"><div class="v">${A.couverts} / ${S.ref.univers.length}</div><div class="l">univers couverts</div></div>
-        <div class="kpi"><div class="v">${pct(A.maturite)}</div><div class="l">maturité moyenne du dispositif</div></div>
+        <div class="kpi"><div class="v">${pct(A.maturite)}</div><div class="l">maîtrise moyenne des risques</div></div>
         <div class="kpi"><div class="v">${fmt1(A.expo)}</div><div class="l">criticité moyenne (sur 16)</div></div>
         <div class="kpi"><div class="v">${hors.length}</div><div class="l">risque${hors.length > 1 ? "s" : ""} au-delà du seuil ${seuil}</div></div>
       </div>
       <div class="grid2" style="margin-top:14px">
         <div class="panel"><h2>Participation par univers</h2><p class="small muted">Nombre de participants ayant renseigné chaque univers.</p>
           ${barres(A.univers.map(u => ({ lab: u.u.court, v: u.n, txt: String(u.n), tip: fr(u.u.nom) })), { max: Math.max(1, A.participants), gris: true })}</div>
-        <div class="panel"><h2>Maturité du dispositif par univers</h2><p class="small muted">Moyenne des réponses de maîtrise, de 0 (non) à 100 (formalisé et contrôlé).</p>
+        <div class="panel"><h2>Maîtrise des risques par univers</h2><p class="small muted">Moyenne des réponses de maîtrise, de 0 (non) à 100 (formalisé et contrôlé).</p>
           ${barres(A.univers.filter(u => u.maturite !== null).sort((a, b) => a.maturite - b.maturite).map(u => ({ lab: u.u.court, v: u.maturite, txt: pct(u.maturite), tip: fr(u.u.nom) + " · " + u.n + " réponse" + (u.n > 1 ? "s" : "") })), { max: 1 })}</div>
       </div>
       <div class="grid2">
@@ -523,6 +533,9 @@
         <div class="panel"><h2>Où les avis divergent le plus</h2><p class="small muted">Étendue des criticités données (de la plus basse à la plus haute) et moyenne. Matière à débat.</p>
           ${diverg.length ? `<table class="res"><thead><tr><th>Risque</th><th>Étendue 1 à 16</th><th class="num">Écart-type</th></tr></thead><tbody>${diverg.map(r => `<tr><td><strong>${r.r.id}</strong> ${t(r.r.libelle)}<br><span class="small muted">${r.n} cotations</span></td><td><div class="range" title="de ${r.min} à ${r.max}, moyenne ${fmt1(r.mc)}"><span style="left:${(r.min - 1) / 15 * 100}%;width:${(r.max - r.min) / 15 * 100}%"></span><i style="left:${(r.mc - 1) / 15 * 100}%"></i></div></td><td class="num">${fmt1(r.sd)}</td></tr>`).join("")}</tbody></table>` : '<p class="muted">Il faut au moins deux cotations par risque.</p>'}
         </div>
+      </div>
+      <div class="panel"><h2>Questions proposées par les participants (${questionsLibres.length})</h2>
+        ${questionsLibres.length ? questionsLibres.map(x => `<div class="remarque"><div class="qui"><strong>${t(x.u.court)}</strong> · ${esc(x.qui)} · ${fmtDate(x.date)}</div><div>${esc(x.texte)}</div></div>`).join("") : '<p class="muted">Aucune question proposée pour le moment.</p>'}
       </div>
       <div class="panel"><h2>Remarques des participants (${remarques.length})</h2>
         ${remarques.length ? remarques.map(x => `<div class="remarque"><div class="qui"><strong>${t(x.u.court)}</strong> · ${esc(x.qui)} · ${fmtDate(x.date)}</div><div>${esc(x.texte).replace(/\n/g, "<br>")}</div></div>`).join("") : '<p class="muted">Aucune remarque pour le moment.</p>'}
@@ -554,6 +567,7 @@
         if (c.t) out.push([...base, "traitement", rr.id, fr(rr.libelle), c.t, c.t === "red" ? "Réduire" : "Accepter"]);
       });
       if (r.remarques) out.push([...base, "remarques", u.code, "", "", r.remarques]);
+      const ql = (r.maitrise || {})._question; if (ql) out.push([...base, "question_proposee", u.code, "", "", ql]);
     });
     telechargerCSV("carto-reponses-" + horodatage() + ".csv", out);
   }
@@ -565,9 +579,12 @@
   }
   function exportMaitrise() {
     const A = agreger(filtrer(S.res.rows));
-    const out = [["Univers", "Question", "Texte", "Réponses notées", "Moyenne (0 à 3)", "Maturité", "Non", "En partie", "Formalisé", "Formalisé et contrôlé", "Je ne sais pas", "Non concerné"]];
+    const out = [["Univers", "Question", "Texte", "Réponses notées", "Moyenne (0 à 3)", "Maîtrise", "Non", "En partie", "Formalisé", "Formalisé et contrôlé", "Je ne sais pas", "Non concerné"]];
     const autres = {}; filtrer(S.res.rows).forEach(r => Object.entries(r.maitrise || {}).forEach(([k, v]) => { if (typeof v !== "number") { autres[k] = autres[k] || { nsp: 0, na: 0 }; if (v in autres[k]) autres[k][v]++; } }));
-    A.univers.forEach(u => u.u.questions.forEach(q => { const vals = u.parQ[q.id] || []; const cnt = v => vals.filter(x => x === v).length; const o = autres[q.id] || { nsp: 0, na: 0 }; out.push([u.u.code, q.id, fr(q.texte), vals.length, fmt1(moy(vals)), vals.length ? pct(moy(vals) / 3) : "", cnt(0), cnt(1), cnt(2), cnt(3), o.nsp, o.na]); }));
+    A.univers.forEach(u => {
+      u.u.questions.forEach(q => { const vals = u.parQ[q.id] || []; const cnt = v => vals.filter(x => x === v).length; const o = autres[q.id] || { nsp: 0, na: 0 }; out.push([u.u.code, q.id, fr(q.texte), vals.length, fmt1(moy(vals)), vals.length ? pct(moy(vals) / 3) : "", cnt(0), cnt(1), cnt(2), cnt(3), o.nsp, o.na]); });
+      u.questions.forEach(x => out.push([u.u.code, "Question proposée", fr(x.texte) + " (" + x.qui + ")", "", "", "", "", "", "", "", "", ""]));
+    });
     telechargerCSV("carto-synthese-maitrise-" + horodatage() + ".csv", out);
   }
 
@@ -603,7 +620,11 @@
   });
   bottom.addEventListener("click", e => { const b = e.target.closest("[data-act=enregistrer]"); if (b) enregistrer(b.dataset.code, b.dataset.suite); });
   app.addEventListener("input", e => {
-    if (e.target.id === "remarques") { const r = route(); if (r.name !== "saisie") return; const m = mesU(r.code); m.remarques = e.target.value; m.modifie = Date.now(); persist(); majBarre(parCode(r.code)); }
+    if (e.target.id === "remarques" || e.target.id === "question-libre") {
+      const r = route(); if (r.name !== "saisie") return; const m = mesU(r.code);
+      if (e.target.id === "remarques") m.remarques = e.target.value; else m.question = e.target.value;
+      m.modifie = Date.now(); persist(); majBarre(parCode(r.code));
+    }
   });
   app.addEventListener("change", e => {
     const el = e.target;

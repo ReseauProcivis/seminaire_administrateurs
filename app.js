@@ -379,10 +379,17 @@
   async function chargerResultats() {
     if (S.res.chargement) return;
     S.res.chargement = true; S.res.erreur = null;
-    try { S.res.rows = dedupe(await S.store.listReponses(SESSION)); S.res.maj = new Date(); }
-    catch (e) { S.res.erreur = e.message || String(e); }
+    let change = true;
+    try {
+      const rows = dedupe(await S.store.listReponses(SESSION));
+      const emp = rows.length + "|" + rows.reduce((m, r) => (r.created_at || "") > m ? r.created_at : m, "");
+      change = emp !== S.res.empreinte || !!S.res.erreur; S.res.empreinte = emp;
+      S.res.rows = rows; S.res.maj = new Date();
+    } catch (e) { S.res.erreur = e.message || String(e); }
     S.res.chargement = false;
-    if (route().name === "resultats") dessinerResultats();
+    if (route().name !== "resultats") return;
+    if (change || !app.querySelector(".kpis, .vide")) dessinerResultats();
+    else { const el = app.querySelector("#res-maj"); if (el) el.textContent = libMaj(); }
   }
 
   function vueResultats() {
@@ -435,12 +442,35 @@
     return `<div class="bars">${items.map(x => `<div class="bar${x.sub ? " sub" : ""}" data-tip="${esc(x.tip || "")}"><span class="lab" title="${esc(x.lab)}">${t(x.lab)}</span><span class="track"><span class="fill${opts.gris ? " gris" : ""}" style="width:${x.v === null || x.v === undefined ? 0 : Math.max(0, Math.min(100, x.v / max * 100))}%"></span></span><span class="val">${x.txt}</span></div>`).join("")}</div>`;
   }
 
+  function matriceSVG(risques, seuil, top, tipR) {
+    const W = 620, H = 520, L = 86, B = 46, T = 12, R = 14;
+    const pw = W - L - R, ph = H - T - B;
+    const sx = v => L + (v - 0.5) / 4 * pw, sy = v => T + ph - (v - 0.5) / 4 * ph;
+    let s = `<svg class="scatter" viewBox="0 0 ${W} ${H}" role="img" aria-label="Matrice des risques : probabilité moyenne en ordonnée, impact moyen en abscisse">`;
+    for (let p = 1; p <= 4; p++) for (let i = 1; i <= 4; i++) s += `<rect x="${sx(i - 0.5) + 1}" y="${sy(p + 0.5) + 1}" width="${pw / 4 - 2}" height="${ph / 4 - 2}" rx="6" class="c-${niveau(p * i).k}"/>`;
+    for (let v = 1; v <= 4; v++) {
+      s += `<text x="${sx(v)}" y="${H - 26}" text-anchor="middle" class="axl">${v} · ${nomImpact[v]}</text>`;
+      s += `<text x="${L - 8}" y="${sy(v) + 4}" text-anchor="end" class="axl">${v} · ${nomProba[v]}</text>`;
+    }
+    s += `<text x="${L + pw / 2}" y="${H - 8}" text-anchor="middle" class="axt">Impact moyen</text>`;
+    s += `<text transform="translate(14 ${T + ph / 2}) rotate(-90)" text-anchor="middle" class="axt">Probabilité moyenne</text>`;
+    const nommes = new Set(top.map(r => r.r.id));
+    risques.filter(r => r.n).sort((a, b) => a.mc - b.mc).forEach(r => {
+      const h = [...r.r.id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+      const cx = sx(r.mi) + ((h % 11) - 5) * 1.3, cy = sy(r.mp) + (((h >> 4) % 11) - 5) * 1.3, hors = r.mc > seuil;
+      s += `<g class="pt${hors ? " hors" : ""}" data-tip="${esc(tipR(r))}"><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${hors ? 7 : 6}"/>${(nommes.has(r.r.id) || hors) ? `<text x="${(cx + 9).toFixed(1)}" y="${(cy + 4).toFixed(1)}" class="ptl">${r.r.id}</text>` : ""}</g>`;
+    });
+    return s + "</svg>";
+  }
+
+  const libMaj = () => (S.res.maj ? "Mis à jour à " + S.res.maj.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "") + (S.store.isRemote ? "" : " · mode local");
+
   function dessinerResultats() {
+    const y = window.scrollY;
     const f = S.res.filtres, seuil = S.res.seuil;
     const all = S.res.rows, rows = filtrer(all), A = agreger(rows);
     const opts = (vals, cur) => vals.map(v => `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(v)}</option>`).join("");
     const uniq = k => [...new Set(all.map(r => r[k]).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "fr"));
-    const cellule = {}; A.risques.filter(r => r.n).forEach(r => { const k = Math.round(r.mp) + "-" + Math.round(r.mi); (cellule[k] = cellule[k] || []).push(r); });
     const hors = A.risques.filter(r => r.n && r.mc > seuil).sort((a, b) => b.mc - a.mc);
     const top = A.risques.filter(r => r.n).sort((a, b) => b.mc - a.mc || b.n - a.n).slice(0, 10);
     const diverg = A.risques.filter(r => r.n >= 2).sort((a, b) => b.sd - a.sd).slice(0, 6);
@@ -448,7 +478,7 @@
     const tipR = r => `${r.r.id} · ${fr(r.r.libelle)}\nProbabilité ${fmt1(r.mp)} · Impact ${fmt1(r.mi)} · Criticité ${fmt1(r.mc)}\n${r.n} cotation${r.n > 1 ? "s" : ""} · Réduire : ${pct(r.pctRed)}`;
 
     let h = `
-      <div class="rhead"><div class="nav"><a class="btn lien" href="#/">← Accueil</a><span class="small muted">${S.res.maj ? "Mis à jour à " + S.res.maj.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : ""}${S.store.isRemote ? "" : " · mode local"}</span></div>
+      <div class="rhead"><div class="nav"><a class="btn lien" href="#/">← Accueil</a><span class="small muted" id="res-maj">${libMaj()}</span></div>
         <h1>Résultats de la cartographie</h1><p class="muted">${t(CFG.sessionLabel || "")}</p></div>
       ${S.store.isRemote ? "" : '<div class="bandeau">Mode local : seules les réponses saisies sur cet appareil sont affichées. Branchez Supabase dans config.js pour la collecte partagée.</div>'}
       ${S.res.erreur ? `<div class="bandeau erreur">Lecture impossible : ${esc(S.res.erreur)}</div>` : ""}
@@ -464,7 +494,7 @@
         <button class="btn" data-act="export-maitrise">Synthèse maîtrise (CSV)</button>
       </div></div>`;
 
-    if (!rows.length) { h += '<div class="vide">Aucune réponse pour le moment. La page se met à jour automatiquement.</div>'; app.innerHTML = h; return; }
+    if (!rows.length) { h += '<div class="vide">Aucune réponse pour le moment. La page se met à jour automatiquement.</div>'; app.innerHTML = h; window.scrollTo(0, y); return; }
 
     h += `
       <div class="kpis">
@@ -483,13 +513,9 @@
           ${barres(A.univers.filter(u => u.maturite !== null).sort((a, b) => a.maturite - b.maturite).map(u => ({ lab: u.u.court, v: u.maturite, txt: pct(u.maturite), tip: fr(u.u.nom) + " · " + u.n + " réponse" + (u.n > 1 ? "s" : "") })), { max: 1 })}</div>
       </div>
       <div class="grid2">
-        <div class="panel"><h2>Matrice des risques</h2><p class="small muted">Chaque risque est placé à sa probabilité et son impact moyens (arrondis). Contour noir : au-delà du seuil d'appétence.</p>
-          <div class="matrice">
-            ${[4, 3, 2, 1].map(p => `<div class="ax">${p}</div>` + [1, 2, 3, 4].map(i => { const n = niveau(p * i); const rs = cellule[p + "-" + i] || []; return `<div class="cell ${n.k}" title="Probabilité ${p} · Impact ${i} · Criticité ${p * i}">${rs.map(r => `<span class="rk${r.mc > seuil ? " hors" : ""}" data-tip="${esc(tipR(r))}">${r.r.id}</span>`).join("")}</div>`; }).join("")).join("")}
-            <div class="ax"></div>${[1, 2, 3, 4].map(i => `<div class="ax">${i}</div>`).join("")}
-          </div>
-          <div class="axes-lab"><span>↑ Probabilité</span><span>Impact →</span></div>
-          <div class="legende"><span><i class="sw" style="background:var(--niv-faible-bg)"></i>Faible 1 à 3</span><span><i class="sw" style="background:var(--niv-modere-bg)"></i>Modéré 4 à 6</span><span><i class="sw" style="background:var(--niv-eleve-bg)"></i>Élevé 8 à 9</span><span><i class="sw" style="background:var(--niv-critique-bg)"></i>Critique 12 à 16</span></div>
+        <div class="panel"><h2>Matrice des risques</h2><p class="small muted">Chaque point est un risque placé à sa probabilité et son impact moyens. Les dix plus critiques et ceux qui dépassent le seuil sont nommés ; survolez les autres.</p>
+          ${matriceSVG(A.risques, seuil, top, tipR)}
+          <div class="legende"><span><i class="sw" style="background:var(--niv-faible-bg)"></i>Faible 1 à 3</span><span><i class="sw" style="background:var(--niv-modere-bg)"></i>Modéré 4 à 6</span><span><i class="sw" style="background:var(--niv-eleve-bg)"></i>Élevé 8 à 9</span><span><i class="sw" style="background:var(--niv-critique-bg)"></i>Critique 12 à 16</span><span><i class="sw" style="background:var(--gris);border-radius:50%"></i>Risque coté</span><span><i class="sw" style="background:var(--encre);border-radius:50%"></i>Au-delà du seuil</span></div>
         </div>
         <div class="panel"><h2>Exposition moyenne par univers</h2><p class="small muted">Criticité moyenne des risques cotés, sur 16.</p>
           ${barres(A.univers.filter(u => u.expo !== null).sort((a, b) => b.expo - a.expo).map(u => ({ lab: u.u.court, v: u.expo, txt: fmt1(u.expo), tip: fr(u.u.nom) })), { max: 16, gris: true })}</div>
@@ -509,7 +535,7 @@
       <div class="panel"><h2>Remarques des participants (${remarques.length})</h2>
         ${remarques.length ? remarques.map(x => `<div class="remarque"><div class="qui"><strong>${t(x.u.court)}</strong> · ${esc(x.qui)} · ${fmtDate(x.date)}</div><div>${esc(x.texte).replace(/\n/g, "<br>")}</div></div>`).join("") : '<p class="muted">Aucune remarque pour le moment.</p>'}
       </div>`;
-    app.innerHTML = h;
+    app.innerHTML = h; window.scrollTo(0, y);
   }
 
   /* ---------- Exports CSV ---------- */

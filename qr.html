@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR code de la cartographie</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  #qr { background: #fff; padding: 18px; border-radius: 12px; border: 1px solid var(--bordure); }
+  #qr canvas, #qr img { display: block; width: 320px; height: 320px; }
+  .url { font-family: ui-monospace, Menlo, monospace; font-size: .9rem; word-break: break-all; text-align: center; color: var(--encre-2); }
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-in"><a href="./" aria-label="Accueil"><img src="assets/logo-procivis.png" alt="Procivis"></a><div class="titre">QR code de la cartographie</div></div></header>
+<main class="page">
+  <div class="panel">
+    <h1>QR code pour la slide</h1>
+    <p class="small muted">Par défaut, le code pointe vers l'adresse publique de cette application. Vous pouvez saisir une autre adresse (par exemple avec un paramètre de session <code>?s=...</code>).</p>
+    <label class="champ" for="u">Adresse encodée</label>
+    <input type="text" id="u">
+    <div class="actions"><button class="btn primaire" id="gen">Générer</button><button class="btn" id="dl">Télécharger en PNG</button></div>
+  </div>
+  <div class="panel qr-wrap"><div id="qr"></div><div class="url" id="txt"></div></div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  const base = location.href.replace(/qr\.html.*$/, "");
+  const inp = document.getElementById("u"), box = document.getElementById("qr"), txt = document.getElementById("txt");
+  inp.value = new URLSearchParams(location.search).get("u") || base;
+  let qr = null;
+  function gen() {
+    box.innerHTML = ""; txt.textContent = inp.value;
+    qr = new QRCode(box, { text: inp.value, width: 640, height: 640, correctLevel: QRCode.CorrectLevel.M });
+  }
+  document.getElementById("gen").addEventListener("click", gen);
+  document.getElementById("dl").addEventListener("click", () => {
+    const c = box.querySelector("canvas"); if (!c) return;
+    const a = document.createElement("a"); a.href = c.toDataURL("image/png"); a.download = "qr-carto-risques.png"; a.click();
+  });
+  gen();
+</script>
+</body>
+</html>

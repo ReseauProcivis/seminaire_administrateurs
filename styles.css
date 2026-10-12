@@ -46,7 +46,7 @@ p { margin: 0 0 .75rem; }
 /* Mise en page */
 .page { max-width: 760px; margin: 0 auto; padding: 20px 16px 110px; }
 .page.large { max-width: 1240px; }
-.panel { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--rayon); padding: 18px; margin-bottom: 14px; box-shadow: var(--ombre); }
+.panel { overflow-x: auto; background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--rayon); padding: 18px; margin-bottom: 14px; box-shadow: var(--ombre); }
 .panel.accent { border-left: 4px solid var(--vert); }
 .hero { display: flex; flex-direction: column; gap: 10px; padding: 8px 0 18px; }
 .hero img { width: 180px; height: auto; }
@@ -181,7 +181,7 @@ table.res tr.hors td:first-child { border-left: 3px solid var(--encre); }
 .legende .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; border: 1px solid rgba(0,0,0,.06); }
 .remarque { padding: 10px 0; border-top: 1px solid var(--gris-clair); }
 .remarque .qui { font-size: .8rem; color: var(--encre-3); }
-.tooltip { position: fixed; z-index: 50; background: var(--encre); color: #fff; padding: 8px 10px; border-radius: 8px; font-size: .82rem; max-width: 300px; pointer-events: none; display: none; box-shadow: var(--ombre); }
+.tooltip { white-space: pre-line; position: fixed; z-index: 50; background: var(--encre); color: #fff; padding: 8px 10px; border-radius: 8px; font-size: .82rem; max-width: 300px; pointer-events: none; display: none; box-shadow: var(--ombre); }
 .tooltip.on { display: block; }
 .bandeau { background: #FFF3C4; color: #6B5200; border: 1px solid #F3DC7A; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: .9rem; }
 .bandeau.erreur { background: #FFE0E7; color: #8A0F2E; border-color: #FFB3C2; }
@@ -196,3 +196,16 @@ table.res tr.hors td:first-child { border-left: 3px solid var(--encre); }
   .topbar, .bottombar, .filtres, .btn { display: none !important; }
   .page { padding: 0; }
 }
+
+/* Matrice en nuage de points */
+.scatter { width: 100%; height: auto; display: block; max-height: 560px; }
+.scatter .c-faible { fill: var(--niv-faible-bg); }
+.scatter .c-modere { fill: var(--niv-modere-bg); }
+.scatter .c-eleve { fill: var(--niv-eleve-bg); }
+.scatter .c-critique { fill: var(--niv-critique-bg); }
+.scatter .axl { font-size: 11px; fill: var(--encre-3); font-family: var(--police); }
+.scatter .axt { font-size: 11.5px; fill: var(--encre-2); font-weight: 600; font-family: var(--police); }
+.scatter .pt circle { fill: var(--gris); stroke: #fff; stroke-width: 2; cursor: default; }
+.scatter .pt.hors circle { fill: var(--encre); }
+.scatter .pt:hover circle { stroke: var(--encre); }
+.scatter .ptl { font-size: 10.5px; font-weight: 700; fill: var(--encre); font-family: var(--police); paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }

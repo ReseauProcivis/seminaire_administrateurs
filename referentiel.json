@@ -1,6 +1,6 @@
 {
- "version": "2026-10-12-v1-guillaume",
- "source": "Extrait de l'artifact de Guillaume Macher du 12 octobre 2026",
+ "version": "2026-10-12-v2-atelier-paris",
+ "source": "Référentiel de Guillaume Macher (12 octobre 2026) revu avec les remarques des groupes marchés et fonctions support de l'atelier du 12 octobre",
  "echelles": {
   "maitrise": [
    {
@@ -18,6 +18,10 @@
    {
     "v": 3,
     "l": "Oui, formalisé et contrôlé"
+   },
+   {
+    "v": "nsp",
+    "l": "Je ne sais pas"
    },
    {
     "v": "na",
@@ -138,12 +142,12 @@
  "univers": [
   {
    "code": "GOV",
-   "nom": "Gouvernance coopérative et pilotage du réseau",
+   "nom": "Gouvernance de la SACICAP",
    "court": "Gouvernance",
    "bloc": "soc",
    "metiers": [],
    "reference": "Loi du 10 septembre 1947 ; CCH L.215-1 et suivants",
-   "intro": "Pilotage de la SACICAP, articulation avec ses filiales, l'UES-AP et Procivis national, rôle des administrateurs.",
+   "intro": "Pilotage de la SACICAP par son conseil d'administration, articulation avec ses filiales et avec Procivis UES-AP, rôle des administrateurs.",
    "questions": [
     {
      "id": "GOV-Q1",
@@ -155,15 +159,19 @@
     },
     {
      "id": "GOV-Q3",
-     "texte": "Les délégations de pouvoirs et les conventions réglementées entre la SACICAP, ses filiales et ses participations sont formalisées et contrôlées."
+     "texte": "Les délégations de pouvoirs sont formalisées et contrôlées."
+    },
+    {
+     "id": "GOV-Q6",
+     "texte": "Les conventions réglementées entre la SACICAP, ses filiales et ses participations sont formalisées et contrôlées."
     },
     {
      "id": "GOV-Q4",
-     "texte": "Les administrateurs suivent une formation régulière sur les enjeux HLM, financiers et coopératifs, et les conflits d'intérêts sont déclarés."
+     "texte": "Les administrateurs suivent une formation régulière adaptée à leur mandat (enjeux HLM, financiers et coopératifs)."
     },
     {
      "id": "GOV-Q5",
-     "texte": "La succession des dirigeants et des administrateurs clés est anticipée."
+     "texte": "La succession des dirigeants et des administrateurs est anticipée."
     }
    ],
    "risques": [
@@ -177,7 +185,7 @@
     },
     {
      "id": "GOV-3",
-     "libelle": "Désalignement stratégique entre les SACICAP et Procivis UES-AP"
+     "libelle": "Désalignement stratégique entre la SACICAP et Procivis UES-AP"
     },
     {
      "id": "GOV-4",
@@ -195,25 +203,25 @@
    "court": "Statut SACICAP",
    "bloc": "soc",
    "metiers": [],
-   "reference": "CCH L.215-1 à L.215-8 et R.215-1 et suivants ; décret no 2007-1595",
-   "intro": "Respect de l'objet social, de la convention avec l'État, des règles coopératives et des contrôles de l'État.",
+   "reference": "CCH L.215-1 à L.215-8 et R.215-1 et suivants",
+   "intro": "Respect de l'objet social, de la convention avec l'État et des règles coopératives.",
    "questions": [
-    {
-     "id": "JUR-Q1",
-     "texte": "Les engagements de la convention avec l'État et les obligations vis-à-vis de Procivis UES-AP sont suivis par une personne identifiée."
-    },
-    {
-     "id": "JUR-Q2",
-     "texte": "La relation avec l'État est pilotée et débouche sur des opportunités de partenariat tangibles."
-    },
     {
      "id": "JUR-Q3",
      "texte": "La SACICAP respecte ses obligations coopératives (capital, parts sociales, réserves, affectation du résultat).",
      "texte_reseau": "Les SACICAP respectent leurs obligations coopératives (capital, parts sociales, réserves, affectation du résultat)."
     },
     {
+     "id": "JUR-Q5",
+     "texte": "L'objet social de la SACICAP est connu des administrateurs et sa réalisation est vérifiée."
+    },
+    {
+     "id": "JUR-Q6",
+     "texte": "La révision coopérative est réalisée à la fréquence prévue et ses recommandations sont suivies."
+    },
+    {
      "id": "JUR-Q4",
-     "texte": "Le projet de l'État de faire évoluer le statut des SACICAP (CCH L.215-1 et suivants) est suivi et ses effets sont anticipés ; une veille réglementaire couvre aussi la fiscalité."
+     "texte": "Les projets d'évolution du statut des SACICAP sont suivis et leurs effets sont anticipés."
     }
    ],
    "risques": [
@@ -266,7 +274,11 @@
     },
     {
      "id": "CONF-Q5",
-     "texte": "Les procédures d'achat et de mise en concurrence sont formalisées et contrôlées."
+     "texte": "Des procédures d'achat et de bonnes pratiques de mise en concurrence sont formalisées en interne."
+    },
+    {
+     "id": "CONF-Q6",
+     "texte": "Les conflits d'intérêts des administrateurs et des dirigeants sont déclarés et suivis."
     }
    ],
    "risques": [
@@ -280,15 +292,15 @@
     },
     {
      "id": "CONF-3",
-     "libelle": "Non-conformité RGPD sur les données des acquéreurs, locataires, copropriétaires ou bénéficiaires"
+     "libelle": "Non-conformité au RGPD"
     },
     {
      "id": "CONF-4",
-     "libelle": "Contentieux majeur avec un acquéreur, un locataire, un partenaire ou un ancien salarié"
+     "libelle": "Contentieux majeur"
     },
     {
      "id": "CONF-5",
-     "libelle": "Irrégularité dans une procédure d'achat ou de mise en concurrence"
+     "libelle": "Irrégularité dans une procédure d'achat interne"
     }
    ]
   },
@@ -303,11 +315,11 @@
    "questions": [
     {
      "id": "FIN-Q1",
-     "texte": "Un plan de trésorerie glissant sur 12 à 24 mois est tenu et présenté à la direction."
+     "texte": "Un plan de trésorerie glissant à plus de 24 mois est tenu et présenté à la direction."
     },
     {
      "id": "FIN-Q2",
-     "texte": "Les engagements hors bilan (garanties, cautions, comptes courants d'associés) sont recensés et suivis."
+     "texte": "Les engagements hors bilan (garanties, cautions) sont recensés et suivis."
     },
     {
      "id": "FIN-Q3",
@@ -337,26 +349,26 @@
     },
     {
      "id": "FIN-4",
-     "libelle": "Défaillance d'un partenaire financier ou perte de valeur d'un placement"
+     "libelle": "Retrait ou fin du soutien d'un partenaire financier, ou perte de valeur d'un placement"
     },
     {
      "id": "FIN-5",
-     "libelle": "Tension de trésorerie liée au portage d'opérations ou de stocks"
+     "libelle": "Tension de trésorerie"
     }
    ]
   },
   {
    "code": "REP",
-   "nom": "Marque, image et solidarité du réseau",
-   "court": "Marque et réseau",
+   "nom": "Marque Procivis",
+   "court": "Marque Procivis",
    "bloc": "soc",
    "metiers": [],
    "reference": "Marque Procivis, UES-AP",
-   "intro": "La marque Procivis est partagée par toutes les coopératives : un incident local peut toucher l'ensemble du réseau.",
+   "intro": "La marque Procivis est portée par Procivis UES-AP et utilisée par une partie des sociétés du réseau : un incident local peut rejaillir sur l'ensemble.",
    "questions": [
     {
      "id": "REP-Q1",
-     "texte": "L'usage de la marque Procivis par les sociétés du réseau est encadré (charte, contrat, contrôle)."
+     "texte": "L'usage de la marque Procivis par les sociétés du réseau est encadré."
     },
     {
      "id": "REP-Q2",
@@ -364,7 +376,7 @@
     },
     {
      "id": "REP-Q3",
-     "texte": "Les incidents graves sont remontés à Procivis UES-AP selon une procédure connue de tous."
+     "texte": "Une procédure de remontée des incidents graves à Procivis UES-AP existe et est connue."
     },
     {
      "id": "REP-Q4",
@@ -378,7 +390,7 @@
     },
     {
      "id": "REP-2",
-     "libelle": "Usage non conforme de la marque ou des logos"
+     "libelle": "Usage non conforme de la marque ou des logos, par une société du réseau ou par un tiers"
     },
     {
      "id": "REP-3",
@@ -421,7 +433,11 @@
     },
     {
      "id": "RH-Q5",
-     "texte": "Les savoir-faire métier (montage d'opérations, gestion, syndic) sont documentés."
+     "texte": "Les savoir-faire métier (montage d'opérations, gestion, syndic) sont formalisés et transmis (procédures, binômes, tutorat)."
+    },
+    {
+     "id": "RH-Q6",
+     "texte": "Les obligations en matière d'égalité professionnelle femmes-hommes et de prévention du harcèlement sont respectées et suivies."
     }
    ],
    "risques": [
@@ -444,6 +460,10 @@
     {
      "id": "RH-5",
      "libelle": "Non-conformité des habilitations et de la formation des professionnels réglementés"
+    },
+    {
+     "id": "RH-6",
+     "libelle": "Situation de harcèlement ou manquement à l'égalité professionnelle"
     }
    ]
   },
@@ -462,7 +482,7 @@
     },
     {
      "id": "CYB-Q2",
-     "texte": "Les collaborateurs sont sensibilisés chaque année au hameçonnage et à la fraude au président."
+     "texte": "Les collaborateurs sont sensibilisés chaque année aux risques cyber (hameçonnage, fraude au président, usage des données)."
     },
     {
      "id": "CYB-Q3",
@@ -475,6 +495,10 @@
     {
      "id": "CYB-Q5",
      "texte": "Les usages de l'intelligence artificielle sont encadrés par une charte (données confidentielles, relecture)."
+    },
+    {
+     "id": "CYB-Q6",
+     "texte": "Les prestataires informatiques sont contrôlés (contrats, sécurité, réversibilité)."
     }
    ],
    "risques": [
@@ -488,7 +512,7 @@
     },
     {
      "id": "CYB-3",
-     "libelle": "Fuite de données personnelles (clients, locataires, bénéficiaires)"
+     "libelle": "Fuite de données personnelles (clients, locataires, bénéficiaires, salariés)"
     },
     {
      "id": "CYB-4",
@@ -519,23 +543,19 @@
     },
     {
      "id": "RSE-Q2",
-     "texte": "La trajectoire énergétique du patrimoine détenu et géré est connue et chiffrée."
+     "texte": "La trajectoire énergétique du patrimoine détenu est connue et chiffrée."
     },
     {
      "id": "RSE-Q3",
      "texte": "Les risques climatiques physiques (inondation, argiles, chaleur) sont évalués sur les opérations et le patrimoine."
     },
     {
-     "id": "RSE-Q4",
-     "texte": "Les obligations extra-financières applicables à la structure sont identifiées et suivies."
-    },
-    {
      "id": "RSE-Q5",
-     "texte": "La RSE est portée par la gouvernance : un administrateur ou un comité est référent, un responsable opérationnel est désigné et le conseil suit les engagements au moins une fois par an."
+     "texte": "La RSE est portée par la gouvernance : un administrateur ou un comité est référent et un responsable opérationnel est désigné."
     },
     {
      "id": "RSE-Q6",
-     "texte": "Des indicateurs RSE (environnement, social, gouvernance) sont définis, mesurés chaque année et restitués aux associés et aux parties prenantes."
+     "texte": "Des indicateurs RSE et données extra-financières (environnement, social, gouvernance) sont définis, mesurés chaque année et restitués aux associés et aux parties prenantes."
     },
     {
      "id": "RSE-Q7",
@@ -543,13 +563,13 @@
     },
     {
      "id": "RSE-Q8",
-     "texte": "Les achats et le choix des partenaires intègrent des critères sociaux et environnementaux."
+     "texte": "Une politique d'achats et de choix des partenaires intègre des critères sociaux et environnementaux."
     }
    ],
    "risques": [
     {
      "id": "RSE-1",
-     "libelle": "Coût de la transition énergétique du parc non financé"
+     "libelle": "Coût de la transition énergétique du parc locatif social non financé"
     },
     {
      "id": "RSE-2",
@@ -565,7 +585,7 @@
     },
     {
      "id": "RSE-5",
-     "libelle": "Communication environnementale contestée"
+     "libelle": "Communication environnementale contestée (greenwashing)"
     },
     {
      "id": "RSE-6",
@@ -595,6 +615,14 @@
    "intro": "Engagements pris au titre de la convention avec l'État.",
    "questions": [
     {
+     "id": "MS-Q5",
+     "texte": "Les engagements de la convention avec l'État et les obligations vis-à-vis de Procivis UES-AP sont suivis par une personne identifiée."
+    },
+    {
+     "id": "MS-Q6",
+     "texte": "La relation avec l'État est pilotée et débouche sur des opportunités de partenariat tangibles."
+    },
+    {
      "id": "MS-Q1",
      "texte": "Les engagements de missions sociales sont programmés et suivis au regard des objectifs conventionnels."
     },
@@ -608,7 +636,7 @@
     },
     {
      "id": "MS-Q4",
-     "texte": "L'impact des actions (ménages aidés, gains énergétiques, copropriétés redressées) est mesuré et restitué à l'État."
+     "texte": "L'impact des actions (ménages aidés, gains énergétiques, copropriétés redressées) est mesuré."
     }
    ],
    "risques": [
@@ -661,15 +689,19 @@
     },
     {
      "id": "MOA-Q3",
-     "texte": "Les assurances dommages-ouvrage et tous risques chantier, ainsi que les garanties décennale, biennale et de parfait achèvement, sont contrôlées."
+     "texte": "Les assurances tous risques chantier sont souscrites."
     },
     {
      "id": "MOA-Q4",
-     "texte": "La RE2020 et les objectifs bas carbone sont intégrés dès la conception."
+     "texte": "Les futurs seuils de la RE2020 et les objectifs bas carbone sont anticipés."
     },
     {
      "id": "MOA-Q5",
      "texte": "Les réclamations et le service après livraison sont organisés et tracés."
+    },
+    {
+     "id": "MOA-Q6",
+     "texte": "Les acquisitions foncières sont validées après études de sol, d'urbanisme et analyse des risques de recours."
     }
    ],
    "risques": [
@@ -692,6 +724,14 @@
     {
      "id": "MOA-5",
      "libelle": "Non-conformité réglementaire ou technique (RE2020, incendie, accessibilité)"
+    },
+    {
+     "id": "MOA-6",
+     "libelle": "Marge insuffisante liée à une dérive du coût de revient"
+    },
+    {
+     "id": "MOA-7",
+     "libelle": "Recours contre un permis ou blocage administratif d'une opération"
     }
    ]
   },
@@ -716,15 +756,7 @@
     },
     {
      "id": "PRO-Q3",
-     "texte": "Les garanties financières d'achèvement et les contrats de vente en état futur d'achèvement sont contrôlés par le service juridique."
-    },
-    {
-     "id": "PRO-Q4",
-     "texte": "Les dispositifs d'accession sociale (PSLA, TVA réduite, prêts aidés) sont intégrés aux plans de financement et suivis."
-    },
-    {
-     "id": "PRO-Q5",
-     "texte": "Les acquéreurs reçoivent une information conforme et leurs réclamations sont tracées."
+     "texte": "Les contrats de vente en état futur d'achèvement sont contrôlés par le service juridique."
     },
     {
      "id": "PRO-Q6",
@@ -732,7 +764,7 @@
     },
     {
      "id": "PRO-Q7",
-     "texte": "Les baux réels solidaires (redevances, plafonds de prix et de ressources, agrément des preneurs) sont contrôlés."
+     "texte": "Les plafonds réglementaires du BRS (redevances, plafonds de prix et de ressources, agrément des preneurs) sont respectés et contrôlés."
     }
    ],
    "risques": [
@@ -755,10 +787,6 @@
     {
      "id": "PRO-5",
      "libelle": "Contentieux avec des acquéreurs (retard de livraison, réserves, vices)"
-    },
-    {
-     "id": "PRO-6",
-     "libelle": "Marge insuffisante liée à une dérive du coût de revient"
     },
     {
      "id": "PRO-7",
@@ -790,12 +818,16 @@
      "texte": "Les opérations d'aménagement et les lotissements font l'objet de bilans prévisionnels partagés avec la collectivité."
     },
     {
-     "id": "AMC-Q4",
-     "texte": "Les contrats de construction de maison individuelle respectent les mentions obligatoires, et la garantie de livraison à prix et délais convenus est souscrite avant l'ouverture du chantier."
-    },
-    {
      "id": "AMC-Q5",
      "texte": "Les constructeurs, sous-traitants et artisans sont sélectionnés sur leur solvabilité et leurs assurances, et les réceptions et levées de réserves sont suivies."
+    },
+    {
+     "id": "AMC-Q6",
+     "texte": "La marge brute et le point mort d'activité sont mis en concordance."
+    },
+    {
+     "id": "AMC-Q7",
+     "texte": "Les travaux sont réalisés dans les délais contractuels et des pénalités de retard sont prévues au contrat."
     }
    ],
    "risques": [
@@ -853,10 +885,6 @@
      "texte": "Les procédures de lutte contre le blanchiment sont appliquées (identification, vigilance, déclaration à Tracfin)."
     },
     {
-     "id": "TRA-Q4",
-     "texte": "Les fonds reçus (séquestres) sont conservés sur des comptes séparés et rapprochés."
-    },
-    {
      "id": "TRA-Q5",
      "texte": "Les informations obligatoires (diagnostics, surface, copropriété) sont contrôlées avant chaque compromis."
     }
@@ -898,7 +926,7 @@
    "questions": [
     {
      "id": "MAR-Q1",
-     "texte": "Un observatoire des marchés locaux (prix, délais de vente, solvabilité des ménages) est tenu à jour."
+     "texte": "Un observatoire des marchés locaux (prix, délais de vente, solvabilité des ménages) est mis en place."
     },
     {
      "id": "MAR-Q2",
@@ -911,6 +939,10 @@
     {
      "id": "MAR-Q4",
      "texte": "La concurrence (promoteurs, réseaux d'agences, plateformes) est analysée chaque année."
+    },
+    {
+     "id": "MAR-Q5",
+     "texte": "Les évolutions des dispositifs d'aide à l'accession (PSLA, TVA réduite, prêts aidés) sont suivies et intégrées aux plans de financement."
     }
    ],
    "risques": [
@@ -962,10 +994,6 @@
     {
      "id": "GES-Q4",
      "texte": "Les impayés et la vacance sont suivis chaque mois avec des procédures de relance formalisées."
-    },
-    {
-     "id": "GES-Q5",
-     "texte": "Une assurance couvre les loyers impayés et les propriétaires en sont informés."
     }
    ],
    "risques": [
@@ -1003,10 +1031,6 @@
    "intro": "Copropriétés gérées : comptes séparés, assemblées générales, travaux, trésorerie et responsabilité du syndic.",
    "questions": [
     {
-     "id": "SYN-Q1",
-     "texte": "Chaque copropriété dispose d'un compte séparé, rapproché régulièrement."
-    },
-    {
      "id": "SYN-Q2",
      "texte": "Les assemblées générales sont convoquées et tenues dans les délais et les procès-verbaux sont diffusés."
     },
@@ -1017,16 +1041,12 @@
     {
      "id": "SYN-Q4",
      "texte": "Les obligations liées à la rénovation énergétique (DPE collectif, plan pluriannuel de travaux) sont suivies."
-    },
-    {
-     "id": "SYN-Q5",
-     "texte": "L'assurance de responsabilité du syndic est adaptée et les sinistres sont suivis."
     }
    ],
    "risques": [
     {
      "id": "SYN-1",
-     "libelle": "Mise en cause de la responsabilité du syndic (faute de gestion, sinistre, retard)"
+     "libelle": "Mise en cause de la responsabilité du syndic (faute de gestion, retard)"
     },
     {
      "id": "SYN-2",
@@ -1071,7 +1091,7 @@
     },
     {
      "id": "LOG-Q4",
-     "texte": "Les obligations de regroupement des organismes de logement social et la convention d'utilité sociale sont suivies."
+     "texte": "La convention d'utilité sociale est à jour et suivie."
     },
     {
      "id": "LOG-Q5",

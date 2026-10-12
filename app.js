@@ -233,23 +233,23 @@
         <p>${t(u.intro)}</p>
         <div class="ref">Références : ${t(u.reference)}</div>
         <details class="cadre"><summary>Comment coter ?</summary>
-          <p class="small" style="margin-top:8px"><strong>Maîtrise</strong> : répondez pour chaque mesure selon ce qui existe réellement aujourd'hui. <strong>Probabilité</strong> et <strong>impact</strong> se cotent de 1 à 4 en tenant compte des mesures déjà en place. La criticité est le produit des deux. Pour chaque risque, indiquez si le réseau peut l'<strong>accepter</strong> tel quel ou doit le <strong>réduire</strong>. <a href="#/aide">Voir les échelles détaillées</a>.</p>
+          <p class="small" style="margin-top:8px"><strong>Maîtrise</strong> : répondez pour chaque mesure selon ce qui existe réellement aujourd'hui. <strong>Probabilité</strong> et <strong>impact</strong> se cotent de 1 à 4 en tenant compte des mesures déjà en place. La criticité est le produit des deux. Pour chaque risque, indiquez votre décision : l'<strong>accepter</strong> à son niveau actuel, ou le <strong>réduire</strong> par un plan d'action. Cette décision ne change pas la note. <a href="#/aide">Voir les échelles détaillées</a>.</p>
         </details>
       </div>
       <div class="panel">
         <div class="section-titre"><span class="num">1</span><h2>Maîtrise du dispositif</h2></div>
-        <p class="small muted">${u.questions.length} mesures à qualifier.</p>
+        <p class="small muted">${u.questions.length} mesures à qualifier selon ce qui existe réellement aujourd'hui. « Je ne sais pas » est une réponse acceptée.</p>
         ${u.questions.map(q => `
           <div class="q" data-q="${q.id}">
             <p>${t(txtQ(q))}</p>
             <div class="pills" role="group" aria-label="${esc(q.id)}">
-              ${E.maitrise.map(a => `<button type="button" class="pill${String(a.v) === "na" ? " na" : ""}${m.maitrise[q.id] !== undefined && String(m.maitrise[q.id]) === String(a.v) ? " on" : ""}" data-act="maitrise" data-q="${q.id}" data-v="${a.v}">${t(a.l)}</button>`).join("")}
+              ${E.maitrise.map(a => `<button type="button" class="pill${isNaN(Number(a.v)) ? " na" : ""}${m.maitrise[q.id] !== undefined && String(m.maitrise[q.id]) === String(a.v) ? " on" : ""}" data-act="maitrise" data-q="${q.id}" data-v="${a.v}">${t(a.l)}</button>`).join("")}
             </div>
           </div>`).join("")}
       </div>
       <div class="panel">
         <div class="section-titre"><span class="num">2</span><h2>Cotation des risques</h2></div>
-        <p class="small muted">${u.risques.length} risques. Probabilité et impact de 1 à 4, puis décision : accepter ou réduire.</p>
+        <p class="small muted">${u.risques.length} risques. Probabilité et impact de 1 à 4, en tenant compte des mesures déjà en place. Puis votre décision : <strong>Accepter</strong> (on vit avec le risque à son niveau actuel) ou <strong>Réduire</strong> (un plan d'action est nécessaire). La décision ne modifie pas la note, elle est comptée à part dans les résultats.</p>
         ${u.risques.map(r => {
           const c = m.cotation[r.id] || {};
           return `
@@ -335,6 +335,7 @@
           <tr><td><strong>En partie</strong></td><td>Elle existe de façon informelle ou incomplète.</td></tr>
           <tr><td><strong>Oui, formalisé</strong></td><td>Elle est écrite et appliquée.</td></tr>
           <tr><td><strong>Oui, formalisé et contrôlé</strong></td><td>Elle est écrite, appliquée et son application est vérifiée.</td></tr>
+          <tr><td><strong>Je ne sais pas</strong></td><td>Vous n'avez pas l'information. La réponse est enregistrée mais n'entre pas dans la moyenne.</td></tr>
           <tr><td><strong>Non concerné</strong></td><td>La mesure ne s'applique pas à la structure évaluée.</td></tr>
         </table>
       </div>
@@ -354,7 +355,8 @@
       <div class="panel">
         <h2>Criticité et appétence</h2>
         <p>La criticité est le produit probabilité × impact, de 1 à 16 : <span class="badge faible">1 à 3 Faible</span> <span class="badge modere">4 à 6 Modéré</span> <span class="badge eleve">8 à 9 Élevé</span> <span class="badge critique">12 à 16 Critique</span></p>
-        <p>Le seuil d'appétence fixe la criticité au-delà de laquelle un risque n'est plus acceptable sans plan d'action : ${E.seuils.map(s => "<strong>" + t(s.l) + "</strong>").join(", ")}. Il est choisi par le conseil et appliqué à la lecture des résultats.</p>
+        <p><strong>Accepter ou réduire.</strong> Pour chaque risque, vous indiquez si le réseau peut vivre avec le risque à son niveau actuel (accepter) ou s'il faut un plan d'action pour le faire baisser (réduire). Ce choix ne modifie pas la criticité : les résultats affichent, pour chaque risque, la part des répondants qui demandent de le réduire.</p>
+        <p><strong>Seuil d'appétence.</strong> C'est la criticité maximale que le conseil accepte de porter sans plan d'action. Il n'est pas demandé aux répondants : l'animateur le choisit à la lecture des résultats, parmi ${E.seuils.map(s => "<strong>" + t(s.l) + "</strong>").join(", ")}. Les risques dont la criticité moyenne dépasse ce seuil sont mis en avant.</p>
       </div>
       <div class="panel">
         <h2>Cadre de référence du réseau</h2>
@@ -573,8 +575,9 @@
   }
   function exportMaitrise() {
     const A = agreger(filtrer(S.res.rows));
-    const out = [["Univers", "Question", "Texte", "Réponses", "Moyenne (0 à 3)", "Maturité", "Non", "En partie", "Formalisé", "Formalisé et contrôlé"]];
-    A.univers.forEach(u => u.u.questions.forEach(q => { const vals = u.parQ[q.id] || []; const cnt = v => vals.filter(x => x === v).length; out.push([u.u.code, q.id, fr(q.texte), vals.length, fmt1(moy(vals)), vals.length ? pct(moy(vals) / 3) : "", cnt(0), cnt(1), cnt(2), cnt(3)]); }));
+    const out = [["Univers", "Question", "Texte", "Réponses notées", "Moyenne (0 à 3)", "Maturité", "Non", "En partie", "Formalisé", "Formalisé et contrôlé", "Je ne sais pas", "Non concerné"]];
+    const autres = {}; filtrer(S.res.rows).forEach(r => Object.entries(r.maitrise || {}).forEach(([k, v]) => { if (typeof v !== "number") { autres[k] = autres[k] || { nsp: 0, na: 0 }; if (v in autres[k]) autres[k][v]++; } }));
+    A.univers.forEach(u => u.u.questions.forEach(q => { const vals = u.parQ[q.id] || []; const cnt = v => vals.filter(x => x === v).length; const o = autres[q.id] || { nsp: 0, na: 0 }; out.push([u.u.code, q.id, fr(q.texte), vals.length, fmt1(moy(vals)), vals.length ? pct(moy(vals) / 3) : "", cnt(0), cnt(1), cnt(2), cnt(3), o.nsp, o.na]); }));
     telechargerCSV("carto-synthese-maitrise-" + horodatage() + ".csv", out);
   }
 
@@ -595,7 +598,7 @@
     const r = route(); if (r.name !== "saisie") return;
     const u = parCode(r.code), m = mesU(r.code);
     if (a === "maitrise") {
-      const v = b.dataset.v === "na" ? "na" : Number(b.dataset.v);
+      const v = isNaN(Number(b.dataset.v)) ? b.dataset.v : Number(b.dataset.v);
       if (m.maitrise[b.dataset.q] === v) delete m.maitrise[b.dataset.q]; else m.maitrise[b.dataset.q] = v;
       b.parentElement.querySelectorAll(".pill").forEach(x => x.classList.toggle("on", x === b && m.maitrise[b.dataset.q] !== undefined));
     } else if (a === "p" || a === "i" || a === "t") {

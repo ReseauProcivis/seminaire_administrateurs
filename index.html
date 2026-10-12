@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cartographie des risques Procivis</title>
+<meta name="description" content="Cartographie des risques du réseau Procivis : évaluation de la maîtrise et cotation des risques par les administrateurs.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="assets/isotype-procivis.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a href="#/" aria-label="Accueil"><img src="assets/logo-procivis.png" alt="Procivis"></a>
+    <div class="titre">Cartographie des risques</div>
+    <div class="statut" id="statut"><span class="dot"></span><span id="statut-txt">Chargement</span></div>
+  </div>
+</header>
+<main id="app" class="page" aria-live="polite"></main>
+<div id="bottombar"></div>
+<div class="toast" id="toast" role="status"></div>
+<div class="tooltip" id="tooltip" role="tooltip"></div>
+<script src="config.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{
+ "_commentaire": "Liste proposée dans le menu « Votre société ». Modifier librement : une entrée par ligne, ordre d'affichage conservé.",
+ "societes": [
+  "Procivis UES-AP (national)",
+  "4807 Immobilier",
+  "Aveyron Habitat",
+  "CIB",
+  "CIF",
+  "CIFP",
+  "CIFV - Procivis Forez-Velay",
+  "CIS",
+  "CISN",
+  "Edifides",
+  "Evel",
+  "FDI",
+  "Gambetta",
+  "Midi Habitat - Pierre Passion",
+  "Pluralis Habitat",
+  "Polimmo - Procivis Bretagne",
+  "Polylogis",
+  "Procivis Alsace",
+  "Procivis Nouvelle Aquitaine",
+  "Procivis Ouest Immobilier",
+  "Procivis Sud Massif Central Toulouse Pyrénées",
+  "SLCI",
+  "Tisserin",
+  "Valrim",
+  "Vitavi",
+  "Autre"
+ ],
+ "fonctions": [
+  "Présidence",
+  "Administrateur ou administratrice",
+  "Direction générale",
+  "Collaborateur ou collaboratrice",
+  "Autre"
+ ]
+}

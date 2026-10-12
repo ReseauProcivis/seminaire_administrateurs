@@ -6,9 +6,9 @@ window.CARTO_CONFIG = {
   session: "seminaire-administrateurs-2026-10-20",
   // Libellé affiché sur la page d'accueil
   sessionLabel: "Séminaire des administrateurs - 20 octobre 2026",
-  // Supabase : URL du projet et clé publique « anon » (à renseigner une fois le projet créé)
-  supabaseUrl: "",
-  supabaseAnonKey: "",
+  // Supabase : URL du projet et clé publique (« publishable », conçue pour être exposée dans le navigateur)
+  supabaseUrl: "https://ucfnfvpojvcjucspkrct.supabase.co",
+  supabaseAnonKey: "sb_publishable_iuwGATVzwLIrf0WgihMZmA_z1jzmkXj",
   // Clé d'accès à la page de résultats (animateur). Vide = accès libre.
   resultatsCle: "",
   // Seuil d'appétence par défaut sur la page de résultats (4, 6 ou 9)

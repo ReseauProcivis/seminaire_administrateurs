@@ -527,7 +527,7 @@
         ${top.map(r => `<tr class="${r.mc > seuil ? "hors" : ""}"><td><strong>${r.r.id}</strong> ${t(r.r.libelle)}</td><td class="small">${t(r.u.court)}</td><td class="num">${fmt1(r.mp)}</td><td class="num">${fmt1(r.mi)}</td><td class="num"><span class="badge ${niveau(Math.round(r.mc)).k}">${fmt1(r.mc)}</span></td><td class="num">${pct(r.pctRed)}</td><td class="num">${r.n}</td></tr>`).join("")}
         </tbody></table></div>
       <div class="grid2">
-        <div class="panel"><h2>Risques au-delà du seuil d'appétence (${seuil})</h2>
+        <div class="panel"><h2>Risques au-delà du seuil d'appétence (seuil ${seuil})</h2>
           ${hors.length ? `<table class="res"><thead><tr><th>Risque</th><th class="num">Criticité</th><th class="num">Réduire</th></tr></thead><tbody>${hors.map(r => `<tr><td><strong>${r.r.id}</strong> ${t(r.r.libelle)}<br><span class="small muted">${t(r.u.court)}</span></td><td class="num">${fmt1(r.mc)}</td><td class="num">${pct(r.pctRed)}</td></tr>`).join("")}</tbody></table>` : '<p class="muted">Aucun risque ne dépasse ce seuil en moyenne.</p>'}
         </div>
         <div class="panel"><h2>Où les avis divergent le plus</h2><p class="small muted">Étendue des criticités données (de la plus basse à la plus haute) et moyenne. Matière à débat.</p>

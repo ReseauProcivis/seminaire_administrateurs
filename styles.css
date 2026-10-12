@@ -209,3 +209,24 @@ table.res tr.hors td:first-child { border-left: 3px solid var(--encre); }
 .scatter .pt.hors circle { fill: var(--encre); }
 .scatter .pt:hover circle { stroke: var(--encre); }
 .scatter .ptl { font-size: 10.5px; font-weight: 700; fill: var(--encre); font-family: var(--police); paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+
+/* Accueil : disposition reprise de l'artifact d'origine (texte à gauche, « Nouveau rapport » à droite) */
+.eyebrow { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--encre-3); font-weight: 600; margin: 0 0 6px; }
+.hero h1 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); }
+.intro { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start; margin-bottom: 28px; }
+@media (min-width: 900px) { .intro { grid-template-columns: 1.15fr 1fr; } }
+.intro-txt .lead { font-size: 1.1rem; max-width: 62ch; margin-bottom: 16px; }
+.famlist { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.chip.accent { background: var(--vert-pale); color: var(--vert-fonce); }
+.newform .row { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 560px) { .newform .row { grid-template-columns: 1fr 1fr; } }
+.newform label.f { display: block; font-weight: 600; margin: 0 0 10px; }
+.newform label.f input, .newform label.f select { margin-top: 5px; font-weight: 400; }
+.newform fieldset.mets { border: 1px solid var(--bordure); border-radius: 10px; padding: 8px 12px 10px; margin: 2px 0 14px; display: grid; gap: 6px; }
+.newform fieldset.mets legend { font-weight: 600; font-size: .9rem; padding: 0 4px; }
+.newform fieldset.mets label { display: flex; gap: 8px; align-items: flex-start; font-size: .92rem; cursor: pointer; }
+.newform fieldset.mets input { margin-top: 3px; accent-color: var(--vert-fonce); }
+.newform fieldset.mets.inactif { opacity: .55; }
+.newform .note { font-size: .84rem; color: var(--encre-3); margin: 10px 0 0; }
+.rapports .rap-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+table.rap td, table.rap th { padding: 12px 14px; }

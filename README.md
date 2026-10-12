@@ -35,6 +35,13 @@ Chaque univers est enregistré séparément : une réponse partielle compte. Les
 
 La clé « anon » est publique par conception. Les règles d'accès (RLS) n'autorisent que l'ajout et la lecture de réponses, jamais la modification ou la suppression. L'agrégation retient la dernière réponse de chaque participant pour chaque univers.
 
+## Repartir de zéro avant de partager le lien
+
+Les réponses ne sont pas dans le dépôt mais dans Supabase. Deux façons de nettoyer :
+
+1. **Sans rien supprimer** : changer `session` dans `config.js` (par exemple `seminaire-administrateurs-2026-10-20-v2`) et pousser. La page ne lit que la session courante. Les anciennes réponses restent consultables en ajoutant `?s=ancienne-session` à l'adresse.
+2. **En supprimant** : exécuter `supabase/nettoyage.sql` dans l'éditeur SQL de Supabase (le fichier contient d'abord un `select` de contrôle, puis le `delete`). La clé publique de la page ne peut pas supprimer, c'est voulu.
+
 ## Modifier le référentiel
 
 Éditer `referentiel.json`. Chaque univers comporte un `code` (ex. `GOV`), un `nom`, un `court`, un `bloc` (`soc` ou `met`), des `metiers` (vide = toujours proposé), une `reference`, une `intro`, des `questions` (`id`, `texte`, `texte_reseau` facultatif) et des `risques` (`id`, `libelle`). Conserver les identifiants existants pour garder la continuité des réponses déjà collectées ; mettre à jour `version` pour tracer l'évolution.

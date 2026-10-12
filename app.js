@@ -83,7 +83,7 @@
   /* ---------- Rendu ---------- */
   function render() {
     const r = route();
-    app.className = "page" + (r.name === "resultats" ? " large" : "");
+    app.className = "page" + (r.name === "resultats" || r.name === "accueil" ? " large" : "");
     bottom.innerHTML = "";
     if (r.name !== "resultats" && S.res.timer) { clearInterval(S.res.timer); S.res.timer = null; S.res.actif = false; }
     if (r.name === "accueil") app.innerHTML = vueAccueil();
@@ -99,79 +99,69 @@
     window.scrollTo(0, 0);
   }
 
-  /* ---------- Accueil ---------- */
+  /* ---------- Accueil (reprend la page d'accueil de l'artifact d'origine) ---------- */
   function vueAccueil() {
-    const p = S.participant;
-    const soc = S.soc.societes, fon = S.soc.fonctions;
-    const metiers = S.ref.metiers;
-    const sel = (v, cur) => v === cur ? " selected" : "";
-    const hero = `
-      <div class="hero">
-        <img src="assets/logo-procivis.png" alt="Procivis">
-        <h1>Cartographie des risques du réseau Procivis</h1>
-        <p class="sous">${t(CFG.sessionLabel || "")}</p>
-      </div>`;
-    const etapes = `
-      <div class="panel">
+    const p = S.participant, cur = p || {};
+    const soc = S.soc.societes, fon = S.soc.fonctions, metiers = S.ref.metiers;
+    const sel = (v, c) => v === c ? " selected" : "";
+    const mets = cur.metiers && cur.metiers.length ? cur.metiers : metiers.map(m => m.id);
+    const intro = `
+      <div class="intro-txt">
+        <p class="lead">Un autodiagnostic pour le séminaire des administrateurs : il couvre tous les métiers du réseau Procivis et les règles propres au statut de SACICAP. Il mesure la maîtrise de chaque univers, cote les risques et les compare à l'appétence au risque choisie par le groupe.</p>
         <div class="etapes">
-          <div class="etape"><b>1</b><p><strong>Identifiez-vous</strong> en quelques secondes : votre société et votre fonction suffisent.</p></div>
-          <div class="etape"><b>2</b><p><strong>Évaluez et cotez</strong>, univers par univers : la maîtrise du dispositif, puis la probabilité et l'impact de chaque risque, de 1 à 4. Chaque univers s'enregistre séparément : vous pouvez en remplir un seul ou plusieurs.</p></div>
-          <div class="etape"><b>3</b><p><strong>Partagez vos remarques</strong> : une question mal posée, un risque manquant, tout est utile pour améliorer cette cartographie.</p></div>
+          <div class="etape"><b>1</b><p><strong>Choisir le périmètre.</strong> « Réseau » pour la vision d'ensemble du séminaire. « SACICAP » pour décliner ensuite société par société, avec les seuls métiers exercés.</p></div>
+          <div class="etape"><b>2</b><p><strong>Évaluer et coter.</strong> Maîtrise de chaque univers, puis probabilité et impact de 1 à 4 pour chaque risque, en tenant compte des mesures déjà en place. Décidez pour chacun : accepter ou réduire.</p></div>
+          <div class="etape"><b>3</b><p><strong>Lire la synthèse.</strong> Maîtrise et exposition par univers, matrice des risques, risques hors appétence, export CSV. L'onglet <a href="#/aide">« Cadre de référence »</a> rappelle les textes et les échelles.</p></div>
         </div>
-        <p class="small muted" style="margin:10px 0 0">Durée indicative : 4 à 6 minutes par univers. <a href="#/aide">Comprendre les échelles de cotation</a></p>
+        <div class="famlist">${metiers.map(m => `<span class="chip accent">${t(m.nom)}</span>`).join("")}</div>
       </div>`;
-    if (p && !S.editionProfil) {
-      const act = universActifs(p), fin = act.filter(u => progression(u).etat === "termine").length;
-      return hero + `
-        <div class="panel accent">
-          <h2>Bon retour${p.prenom ? ", " + esc(p.prenom) : ""}</h2>
-          <p>${esc(p.societe)} · ${esc(p.fonction)} · ${p.perimetre === "sacicap" ? "périmètre de ma société" : "périmètre réseau"}</p>
-          <p class="muted small">${fin} univers terminé${fin > 1 ? "s" : ""} sur ${act.length}.</p>
-          <div class="actions">
-            <a class="btn primaire" href="#/univers">Reprendre</a>
-            <button class="btn" data-act="editer-profil">Modifier mes informations</button>
+    const form = `
+      <div class="panel">
+        <h3 style="margin-bottom:12px">${p ? "Votre rapport" : "Nouveau rapport"}</h3>
+        <form class="newform" id="f-profil" autocomplete="off">
+          <div class="row">
+            <label class="f" for="f-societe">Structure
+              <select id="f-societe" required><option value="">Ex. Réseau Procivis</option>${soc.map(x => `<option value="${esc(x)}"${sel(x, cur.societe)}>${esc(x)}</option>`).join("")}</select></label>
+            <label class="f" for="f-fonction">Fonction
+              <select id="f-fonction" required><option value="">Choisir</option>${fon.map(x => `<option value="${esc(x)}"${sel(x, cur.fonction)}>${esc(x)}</option>`).join("")}</select></label>
           </div>
-        </div>` + etapes;
+          <label class="f" for="f-prenom">Intitulé <span class="muted">(votre prénom, facultatif)</span>
+            <input type="text" id="f-prenom" maxlength="60" value="${esc(cur.prenom || "")}" placeholder="Ex. Séminaire ${new Date().getFullYear()}"></label>
+          <label class="f" for="f-perimetre">Périmètre
+            <select id="f-perimetre" name="perim"><option value="reseau"${cur.perimetre !== "sacicap" ? " selected" : ""}>Réseau Procivis (tous les métiers)</option><option value="sacicap"${cur.perimetre === "sacicap" ? " selected" : ""}>Une SACICAP (métiers à choisir)</option></select></label>
+          <fieldset class="mets${cur.perimetre === "sacicap" ? "" : " inactif"}" id="f-metiers"><legend>Métiers exercés (pour une SACICAP)</legend>
+            ${metiers.map(m => `<label for="f-m-${m.id}"><input type="checkbox" name="met" id="f-m-${m.id}" value="${m.id}"${mets.includes(m.id) ? " checked" : ""}>${t(m.nom)}</label>`).join("")}
+          </fieldset>
+          <button class="btn primaire" type="submit">${p ? "Mettre à jour le rapport" : "Créer le rapport"}</button>
+          <p class="note">${S.store.isRemote ? "Le rapport est enregistré au fil de la saisie et visible par les personnes ayant accès à cet outil." : "Aperçu local : le rapport ne sera pas conservé après fermeture."}</p>
+        </form>
+      </div>`;
+    let rapports = `<section class="rapports"><div class="rap-head"><h2>Rapports</h2><span class="muted">${p ? "1 rapport" : "0 rapport"}</span></div>`;
+    if (!p) {
+      rapports += `<div class="panel"><p><strong>Aucun rapport pour l'instant.</strong></p><p class="muted">Créez le premier avec le formulaire « Nouveau rapport » : il apparaîtra ici avec sa progression et son niveau de maîtrise.</p></div>`;
+    } else {
+      const act = universActifs(p);
+      const tot = act.reduce((x, u) => x + progression(u).tot, 0), fait = act.reduce((x, u) => x + progression(u).fait, 0);
+      const vals = []; act.forEach(u => { const m = S.mes[u.code]; if (m) Object.values(m.maitrise).forEach(v => { if (typeof v === "number") vals.push(v); }); });
+      const mat = vals.length ? moy(vals) / 3 : null;
+      const maj = Math.max(0, ...act.map(u => (S.mes[u.code] || {}).modifie || 0));
+      rapports += `<div class="panel" style="padding:0;overflow-x:auto"><table class="res rap"><thead><tr><th>Structure</th><th>Intitulé</th><th>Périmètre</th><th>Mis à jour</th><th>Progression</th><th class="num">Maîtrise</th><th></th></tr></thead><tbody>
+        <tr><td><a class="btn lien" href="#/univers">${esc(p.societe)}</a></td><td>${esc(p.prenom || p.fonction)}</td><td><span class="chip">${p.perimetre === "sacicap" ? "SACICAP" : "Réseau"}</span></td><td class="muted">${maj ? fmtDate(maj) : "-"}</td>
+        <td><div style="display:flex;gap:8px;align-items:center;min-width:140px"><div class="progress" style="flex:1"><span style="width:${tot ? Math.round(fait / tot * 100) : 0}%"></span></div><span class="num">${tot ? Math.round(fait / tot * 100) : 0} %</span></div></td>
+        <td class="num">${pct(mat)}</td><td><a class="btn" href="#/univers">Ouvrir</a></td></tr></tbody></table></div>`;
     }
-    const cur = p || {};
-    return hero + etapes + `
-      <form class="panel" id="f-profil" autocomplete="off">
-        <h2>Qui répond ?</h2>
-        <label class="champ" for="f-societe">Votre société</label>
-        <select id="f-societe" required>
-          <option value="">Choisir dans la liste</option>
-          ${soc.map(s => `<option value="${esc(s)}"${sel(s, cur.societe)}>${esc(s)}</option>`).join("")}
-        </select>
-        <label class="champ" for="f-fonction">Votre fonction</label>
-        <select id="f-fonction" required>
-          <option value="">Choisir dans la liste</option>
-          ${fon.map(s => `<option value="${esc(s)}"${sel(s, cur.fonction)}>${esc(s)}</option>`).join("")}
-        </select>
-        <label class="champ" for="f-prenom">Votre prénom <small>Facultatif. Il n'apparaît que dans l'export destiné à la direction générale.</small></label>
-        <input type="text" id="f-prenom" maxlength="60" value="${esc(cur.prenom || "")}" placeholder="Prénom">
-        <label class="champ">Périmètre de votre évaluation</label>
-        <div class="radios">
-          <label class="radio${cur.perimetre !== "sacicap" ? " on" : ""}"><input type="radio" name="perim" value="reseau"${cur.perimetre !== "sacicap" ? " checked" : ""}><span><strong>Le réseau Procivis dans son ensemble</strong><br><span class="small muted">Vision d'ensemble pour le séminaire : les 17 univers sont proposés.</span></span></label>
-          <label class="radio${cur.perimetre === "sacicap" ? " on" : ""}"><input type="radio" name="perim" value="sacicap"${cur.perimetre === "sacicap" ? " checked" : ""}><span><strong>Ma société uniquement</strong><br><span class="small muted">Seuls les univers correspondant aux métiers exercés sont proposés.</span></span></label>
-        </div>
-        <div id="f-metiers" style="display:${cur.perimetre === "sacicap" ? "block" : "none"}">
-          <label class="champ">Métiers exercés par votre société</label>
-          <div class="radios">
-            ${metiers.map(m => `<label class="check${(cur.metiers || []).includes(m.id) ? " on" : ""}"><input type="checkbox" name="met" value="${m.id}"${(cur.metiers || []).includes(m.id) ? " checked" : ""}><span><strong>${t(m.nom)}</strong><br><span class="small muted">${t(m.description)}</span></span></label>`).join("")}
-          </div>
-        </div>
-        <div class="actions">
-          <button class="btn primaire" type="submit">${p ? "Enregistrer et reprendre" : "Commencer"}</button>
-          ${p ? '<button class="btn" type="button" data-act="annuler-profil">Annuler</button>' : ""}
-        </div>
-      </form>`;
+    rapports += "</section>";
+    return `
+      <div class="hero"><p class="eyebrow">Réseau Procivis · séminaire des administrateurs</p><h1>Cartographie des risques Procivis</h1><p class="muted">${t(CFG.sessionLabel || "")}</p></div>
+      <section class="intro">${intro}${form}</section>
+      ${rapports}`;
   }
 
   function soumettreProfil(form) {
     const societe = form.querySelector("#f-societe").value;
     const fonction = form.querySelector("#f-fonction").value;
     const prenom = form.querySelector("#f-prenom").value.trim();
-    const perimetre = form.querySelector("input[name=perim]:checked").value;
+    const perimetre = form.querySelector("#f-perimetre").value;
     const metiers = [...form.querySelectorAll("input[name=met]:checked")].map(x => x.value);
     if (!societe || !fonction) { toast("Indiquez votre société et votre fonction."); return; }
     if (perimetre === "sacicap" && !metiers.length) { toast("Cochez au moins un métier exercé."); return; }
@@ -205,7 +195,7 @@
         h += `<button class="ucard" data-act="ouvrir" data-code="${u.code}"><span class="code">${u.code}</span><span class="nom">${t(u.court || u.nom)}<span class="meta">${u.questions.length} questions · ${u.risques.length} risques</span></span>${sync}${chip}</button>`;
       });
     });
-    h += `<p class="small muted" style="margin-top:18px"><a href="#/aide">Comprendre les échelles de cotation</a></p>`;
+    h += `<p class="small muted" style="margin-top:18px"><a href="#/aide">Cadre de référence : textes et échelles</a></p>`;
     return h;
   }
 
@@ -233,7 +223,7 @@
         <p>${t(u.intro)}</p>
         <div class="ref">Références : ${t(u.reference)}</div>
         <details class="cadre"><summary>Comment coter ?</summary>
-          <p class="small" style="margin-top:8px"><strong>Maîtrise</strong> : répondez pour chaque mesure selon ce qui existe réellement aujourd'hui. <strong>Probabilité</strong> et <strong>impact</strong> se cotent de 1 à 4 en tenant compte des mesures déjà en place. La criticité est le produit des deux. Pour chaque risque, indiquez votre décision : l'<strong>accepter</strong> à son niveau actuel, ou le <strong>réduire</strong> par un plan d'action. Cette décision ne change pas la note. <a href="#/aide">Voir les échelles détaillées</a>.</p>
+          <p class="small" style="margin-top:8px"><strong>Maîtrise</strong> : répondez pour chaque mesure selon ce qui existe réellement aujourd'hui. <strong>Probabilité</strong> et <strong>impact</strong> se cotent de 1 à 4 en tenant compte des mesures déjà en place. La criticité est le produit des deux. Pour chaque risque, indiquez votre décision : l'<strong>accepter</strong> à son niveau actuel, ou le <strong>réduire</strong> par un plan d'action. Cette décision ne change pas la note. <a href="#/aide">Voir le cadre de référence</a>.</p>
         </details>
       </div>
       <div class="panel">
@@ -327,7 +317,7 @@
   function vueAide() {
     const E = S.ref.echelles;
     return `
-      <div class="rhead"><div class="nav"><button class="btn lien" data-act="retour">← Retour</button></div><h1>Comprendre les échelles</h1></div>
+      <div class="rhead"><div class="nav"><button class="btn lien" data-act="retour">← Retour</button></div><h1>Cadre de référence</h1></div>
       <div class="panel">
         <h2>Maîtrise du dispositif</h2>
         <table class="echelle"><tr><th>Réponse</th><th>Sens</th></tr>
@@ -586,7 +576,7 @@
     const b = e.target.closest("[data-act]"); if (!b) return;
     const a = b.dataset.act;
     if (a === "ouvrir") { go("/u/" + b.dataset.code); return; }
-    if (a === "editer-profil") { e.preventDefault(); S.editionProfil = true; if (route().name === "accueil") render(); else go("/"); return; }
+    if (a === "editer-profil") { e.preventDefault(); go("/"); return; }
     if (a === "annuler-profil") { S.editionProfil = false; render(); return; }
     if (a === "retour") { if (history.length > 1) history.back(); else go("/"); return; }
     if (a === "enregistrer") { enregistrer(b.dataset.code, b.dataset.suite); return; }
@@ -617,8 +607,7 @@
   });
   app.addEventListener("change", e => {
     const el = e.target;
-    if (el.name === "perim") { const z = document.getElementById("f-metiers"); if (z) z.style.display = el.value === "sacicap" ? "block" : "none"; app.querySelectorAll(".radio").forEach(l => l.classList.toggle("on", l.querySelector("input").checked)); }
-    if (el.name === "met") el.closest(".check").classList.toggle("on", el.checked);
+    if (el.name === "perim") { const z = document.getElementById("f-metiers"); if (z) z.classList.toggle("inactif", el.value !== "sacicap"); }
     if (el.dataset.filtre !== undefined) { S.res.filtres[el.dataset.filtre] = el.value; dessinerResultats(); }
     if (el.dataset.seuil !== undefined) { S.res.seuil = Number(el.value); dessinerResultats(); }
   });

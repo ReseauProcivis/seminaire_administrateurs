@@ -59,13 +59,22 @@
     return u.filter(x => !x.metiers.length || x.metiers.some(m => p.metiers.includes(m)));
   };
   const parCode = code => S.ref.univers.find(u => u.code === code);
-  const mesU = code => (S.mes[code] = S.mes[code] || { maitrise: {}, cotation: {}, remarques: "", question: "", modifie: null, envoye: null });
+  const MAX_AJOUTS = 5;
+  const idAjout = (code, list) => { let n = 1; while (list.some(a => a.id === code + "-X" + n)) n++; return code + "-X" + n; };
+  const mesU = code => {
+    const m = (S.mes[code] = S.mes[code] || { maitrise: {}, cotation: {}, ajouts: [], modifie: null, envoye: null });
+    if (!Array.isArray(m.ajouts)) m.ajouts = [];
+    // Ancienne forme (question libre en texte seul) : reprise comme question ajoutée, à coter
+    if (m.question && String(m.question).trim()) { m.ajouts.push({ id: idAjout(code, m.ajouts), texte: String(m.question).trim().slice(0, 300) }); delete m.question; }
+    return m;
+  };
 
   function progression(u) {
-    const m = S.mes[u.code] || { maitrise: {}, cotation: {} };
-    const q = u.questions.filter(x => m.maitrise[x.id] !== undefined).length;
+    const m = S.mes[u.code] || { maitrise: {}, cotation: {}, ajouts: [] };
+    const aj = Array.isArray(m.ajouts) ? m.ajouts : [];
+    const q = u.questions.filter(x => m.maitrise[x.id] !== undefined).length + aj.filter(a => a.v !== undefined && a.v !== null).length;
     const r = u.risques.filter(x => m.cotation[x.id] && m.cotation[x.id].p && m.cotation[x.id].i).length;
-    const tot = u.questions.length + u.risques.length, fait = q + r;
+    const tot = u.questions.length + aj.length + u.risques.length, fait = q + r;
     return { fait, tot, q, r, etat: fait === 0 ? "afaire" : fait < tot ? "encours" : "termine" };
   }
 
@@ -209,6 +218,17 @@
     return `<span class="badge ${n.k}">Criticité ${v} · ${n.l}</span>`;
   }
 
+  function blocMaitrise(id, html, val, act, ajoutee) {
+    const E = S.ref.echelles;
+    return `
+          <div class="q${ajoutee ? " ajoutee" : ""}" data-q="${esc(id)}">
+            <p>${html}${ajoutee ? ' <span class="chip accent">Question ajoutée</span>' : ""}</p>
+            <div class="pills" role="group" aria-label="${esc(id)}">
+              ${E.maitrise.map(a => `<button type="button" class="pill${isNaN(Number(a.v)) ? " na" : ""}${val !== undefined && val !== null && String(val) === String(a.v) ? " on" : ""}" data-act="${act}" data-q="${esc(id)}" data-v="${a.v}">${t(a.l)}</button>`).join("")}
+            </div>${ajoutee ? `<div class="ajout-actions"><button type="button" class="btn lien" data-act="ajout-retirer" data-id="${esc(id)}">Retirer cette question</button></div>` : ""}
+          </div>`;
+  }
+
   function vueSaisie(u) {
     const p = S.participant, m = mesU(u.code), act = universActifs(p);
     const idx = act.indexOf(u), prec = act[idx - 1], suiv = act[idx + 1];
@@ -228,18 +248,13 @@
       </div>
       <div class="panel">
         <div class="section-titre"><span class="num">1</span><h2>Maîtrise des risques</h2></div>
-        <p class="small muted">${u.questions.length} mesures à qualifier selon ce qui existe réellement aujourd'hui. « Je ne sais pas » est une réponse acceptée.</p>
-        ${u.questions.map(q => `
-          <div class="q" data-q="${q.id}">
-            <p>${t(txtQ(q))}</p>
-            <div class="pills" role="group" aria-label="${esc(q.id)}">
-              ${E.maitrise.map(a => `<button type="button" class="pill${isNaN(Number(a.v)) ? " na" : ""}${m.maitrise[q.id] !== undefined && String(m.maitrise[q.id]) === String(a.v) ? " on" : ""}" data-act="maitrise" data-q="${q.id}" data-v="${a.v}">${t(a.l)}</button>`).join("")}
-            </div>
-          </div>`).join("")}
-        <div class="q libre">
-          <label for="question-libre"><strong>Ajouter une question</strong> <span class="muted">Une mesure de maîtrise manque dans cette liste ? Proposez-la, elle sera enregistrée avec vos réponses (facultatif).</span></label>
-          <input type="text" id="question-libre" maxlength="300" placeholder="Votre question" value="${esc(m.question || "")}">
-        </div>
+        ${u.questions.map(q => blocMaitrise(q.id, t(txtQ(q)), m.maitrise[q.id], "maitrise", false)).join("")}
+        ${m.ajouts.map(a => blocMaitrise(a.id, esc(a.texte), a.v, "ajout-v", true)).join("")}
+        ${m.ajouts.length < MAX_AJOUTS ? `
+        <form class="q libre" id="f-ajout" autocomplete="off">
+          <label for="ajout-texte"><strong>Ajouter une question</strong> <span class="muted">Une mesure de maîtrise manque dans ce chapitre ? Formulez-la : elle s'ajoute à la liste et se cote comme les autres.</span></label>
+          <div class="ajout-ligne"><input type="text" id="ajout-texte" maxlength="300" placeholder="Ex. Un comité d'audit se réunit chaque trimestre."><button class="btn" type="submit">Ajouter</button></div>
+        </form>` : `<p class="small muted">Nombre maximal de questions ajoutées atteint pour ce chapitre (${MAX_AJOUTS}).</p>`}
       </div>
       <div class="panel">
         <div class="section-titre"><span class="num">2</span><h2>Cotation des risques</h2></div>
@@ -263,11 +278,6 @@
           </div>`;
         }).join("")}
       </div>
-      <div class="panel">
-        <div class="section-titre"><span class="num">3</span><h2>Vos remarques sur cet univers</h2></div>
-        <p class="small muted">Question à reformuler, risque manquant, mesure de maîtrise oubliée, exemple vécu : tout est utile.</p>
-        <textarea id="remarques" maxlength="4000" placeholder="Vos remarques (facultatif)">${esc(m.remarques || "")}</textarea>
-      </div>
       <div class="actions">
         ${prec ? `<a class="btn" href="#/u/${prec.code}">← ${t(prec.court)}</a>` : ""}
         <button class="btn primaire" data-act="enregistrer" data-code="${u.code}" data-suite="${suiv ? suiv.code : ""}">${suiv ? "Enregistrer et continuer" : "Enregistrer et terminer"}</button>
@@ -284,18 +294,20 @@
     </div></div>`;
   }
   const majBarre = u => { bottom.innerHTML = barreSaisie(u); };
+  const redessinerSaisie = u => { const y = window.scrollY; app.innerHTML = vueSaisie(u); majBarre(u); window.scrollTo(0, y); };
 
   async function enregistrer(code, suite) {
     const u = parCode(code), m = mesU(code), p = S.participant;
     const pr = progression(u);
-    const question = (m.question || "").trim().slice(0, 300);
-    if (pr.fait === 0 && !(m.remarques || "").trim() && !question) { toast("Rien à enregistrer pour cet univers."); return; }
+    const ajouts = (m.ajouts || []).map(a => ({ id: a.id, texte: String(a.texte || "").trim().slice(0, 300), ...(a.v !== undefined && a.v !== null ? { v: a.v } : {}) })).filter(a => a.texte);
+    if (pr.fait === 0 && !ajouts.length) { toast("Rien à enregistrer pour cet univers."); return; }
     const row = {
       session: SESSION, participant_id: p.id, prenom: p.prenom || null, societe: p.societe, fonction: p.fonction,
       perimetre: p.perimetre, metiers: p.perimetre === "sacicap" ? p.metiers : null, univers: code,
-      // La question proposée par le participant voyage dans le jsonb « maitrise » sous la clé _question (ignorée par l'agrégation des notes)
-      maitrise: question ? { ...m.maitrise, _question: question } : m.maitrise,
-      cotation: m.cotation, remarques: (m.remarques || "").trim() || null, version_ref: S.ref.version
+      // Les questions ajoutées par le participant voyagent dans le jsonb « maitrise » sous la clé _ajouts (liste {id, texte, v}),
+      // ignorée par l'agrégation des notes : elles sont restituées à part dans les résultats et les exports.
+      maitrise: ajouts.length ? { ...m.maitrise, _ajouts: ajouts } : m.maitrise,
+      cotation: m.cotation, remarques: null, version_ref: S.ref.version
     };
     setStatut("busy", "Enregistrement");
     try {
@@ -419,8 +431,10 @@
       if (vals.length) cu.mat.push(moy(vals) / 3);
       const qui = [row.prenom, row.societe, row.fonction].filter(Boolean).join(" · ");
       if (row.remarques && String(row.remarques).trim()) cu.remarques.push({ texte: String(row.remarques).trim(), qui, date: row.created_at });
+      const aj = row.maitrise && Array.isArray(row.maitrise._ajouts) ? row.maitrise._ajouts : [];
+      aj.forEach(a => { if (a && typeof a.texte === "string" && a.texte.trim()) cu.questions.push({ id: a.id || "", texte: a.texte.trim(), v: (a.v === undefined ? null : a.v), qui, date: row.created_at }); });
       const ql = row.maitrise && typeof row.maitrise._question === "string" ? row.maitrise._question.trim() : "";
-      if (ql) cu.questions.push({ texte: ql, qui, date: row.created_at });
+      if (ql) cu.questions.push({ id: "", texte: ql, v: null, qui, date: row.created_at });
       Object.entries(row.cotation || {}).forEach(([id, c]) => {
         const cr = R[id]; if (!cr || !c) return;
         if (c.p && c.i) { cr.p.push(c.p); cr.i.push(c.i); cr.c.push(c.p * c.i); }
@@ -465,6 +479,9 @@
   }
 
   const libMaj = () => (S.res.maj ? "Mis à jour à " + S.res.maj.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "") + (S.store.isRemote ? "" : " · mode local");
+
+  const libMaitrise = v => (v === null || v === undefined) ? "" : ((S.ref.echelles.maitrise.find(a => String(a.v) === String(v)) || {}).l || "");
+  const chipMaitrise = v => (v === null || v === undefined) ? '<span class="chip">Non cotée</span>' : `<span class="chip ok">${t(libMaitrise(v))}</span>`;
 
   function dessinerResultats() {
     const y = window.scrollY;
@@ -534,12 +551,13 @@
           ${diverg.length ? `<table class="res"><thead><tr><th>Risque</th><th>Étendue 1 à 16</th><th class="num">Écart-type</th></tr></thead><tbody>${diverg.map(r => `<tr><td><strong>${r.r.id}</strong> ${t(r.r.libelle)}<br><span class="small muted">${r.n} cotations</span></td><td><div class="range" title="de ${r.min} à ${r.max}, moyenne ${fmt1(r.mc)}"><span style="left:${(r.min - 1) / 15 * 100}%;width:${(r.max - r.min) / 15 * 100}%"></span><i style="left:${(r.mc - 1) / 15 * 100}%"></i></div></td><td class="num">${fmt1(r.sd)}</td></tr>`).join("")}</tbody></table>` : '<p class="muted">Il faut au moins deux cotations par risque.</p>'}
         </div>
       </div>
-      <div class="panel"><h2>Questions proposées par les participants (${questionsLibres.length})</h2>
-        ${questionsLibres.length ? questionsLibres.map(x => `<div class="remarque"><div class="qui"><strong>${t(x.u.court)}</strong> · ${esc(x.qui)} · ${fmtDate(x.date)}</div><div>${esc(x.texte)}</div></div>`).join("") : '<p class="muted">Aucune question proposée pour le moment.</p>'}
+      <div class="panel"><h2>Questions ajoutées par les participants (${questionsLibres.length})</h2>
+        <p class="small muted">Mesures de maîtrise proposées dans un chapitre, avec la réponse donnée. Elles n'entrent pas dans la moyenne de maîtrise.</p>
+        ${questionsLibres.length ? questionsLibres.map(x => `<div class="remarque"><div class="qui"><strong>${t(x.u.court)}</strong> · ${esc(x.qui)} · ${fmtDate(x.date)}</div><div>${esc(x.texte)} ${chipMaitrise(x.v)}</div></div>`).join("") : '<p class="muted">Aucune question ajoutée pour le moment.</p>'}
       </div>
-      <div class="panel"><h2>Remarques des participants (${remarques.length})</h2>
-        ${remarques.length ? remarques.map(x => `<div class="remarque"><div class="qui"><strong>${t(x.u.court)}</strong> · ${esc(x.qui)} · ${fmtDate(x.date)}</div><div>${esc(x.texte).replace(/\n/g, "<br>")}</div></div>`).join("") : '<p class="muted">Aucune remarque pour le moment.</p>'}
-      </div>`;
+      ${remarques.length ? `<div class="panel"><h2>Remarques des participants (${remarques.length})</h2>
+        ${remarques.map(x => `<div class="remarque"><div class="qui"><strong>${t(x.u.court)}</strong> · ${esc(x.qui)} · ${fmtDate(x.date)}</div><div>${esc(x.texte).replace(/\n/g, "<br>")}</div></div>`).join("")}
+      </div>` : ""}`;
     app.innerHTML = h; window.scrollTo(0, y);
   }
 
@@ -567,7 +585,8 @@
         if (c.t) out.push([...base, "traitement", rr.id, fr(rr.libelle), c.t, c.t === "red" ? "Réduire" : "Accepter"]);
       });
       if (r.remarques) out.push([...base, "remarques", u.code, "", "", r.remarques]);
-      const ql = (r.maitrise || {})._question; if (ql) out.push([...base, "question_proposee", u.code, "", "", ql]);
+      const ql = (r.maitrise || {})._question; if (ql) out.push([...base, "question_ajoutee", u.code, ql, "", ""]);
+      ((r.maitrise || {})._ajouts || []).forEach(a => { if (!a || !a.texte) return; out.push([...base, "question_ajoutee", a.id || "", fr(a.texte), a.v ?? "", libMaitrise(a.v)]); });
     });
     telechargerCSV("carto-reponses-" + horodatage() + ".csv", out);
   }
@@ -580,10 +599,10 @@
   function exportMaitrise() {
     const A = agreger(filtrer(S.res.rows));
     const out = [["Univers", "Question", "Texte", "Réponses notées", "Moyenne (0 à 3)", "Maîtrise", "Non", "En partie", "Formalisé", "Formalisé et contrôlé", "Je ne sais pas", "Non concerné"]];
-    const autres = {}; filtrer(S.res.rows).forEach(r => Object.entries(r.maitrise || {}).forEach(([k, v]) => { if (typeof v !== "number") { autres[k] = autres[k] || { nsp: 0, na: 0 }; if (v in autres[k]) autres[k][v]++; } }));
+    const autres = {}; filtrer(S.res.rows).forEach(r => Object.entries(r.maitrise || {}).forEach(([k, v]) => { if (k.startsWith("_")) return; if (typeof v !== "number") { autres[k] = autres[k] || { nsp: 0, na: 0 }; if (v in autres[k]) autres[k][v]++; } }));
     A.univers.forEach(u => {
       u.u.questions.forEach(q => { const vals = u.parQ[q.id] || []; const cnt = v => vals.filter(x => x === v).length; const o = autres[q.id] || { nsp: 0, na: 0 }; out.push([u.u.code, q.id, fr(q.texte), vals.length, fmt1(moy(vals)), vals.length ? pct(moy(vals) / 3) : "", cnt(0), cnt(1), cnt(2), cnt(3), o.nsp, o.na]); });
-      u.questions.forEach(x => out.push([u.u.code, "Question proposée", fr(x.texte) + " (" + x.qui + ")", "", "", "", "", "", "", "", "", ""]));
+      u.questions.forEach(x => out.push([u.u.code, "Question ajoutée" + (x.id ? " " + x.id : ""), fr(x.texte) + " (" + x.qui + ")", "", typeof x.v === "number" ? x.v : "", libMaitrise(x.v), "", "", "", "", "", ""]));
     });
     telechargerCSV("carto-synthese-maitrise-" + horodatage() + ".csv", out);
   }
@@ -608,6 +627,14 @@
       const v = isNaN(Number(b.dataset.v)) ? b.dataset.v : Number(b.dataset.v);
       if (m.maitrise[b.dataset.q] === v) delete m.maitrise[b.dataset.q]; else m.maitrise[b.dataset.q] = v;
       b.parentElement.querySelectorAll(".pill").forEach(x => x.classList.toggle("on", x === b && m.maitrise[b.dataset.q] !== undefined));
+    } else if (a === "ajout-v") {
+      const aj = m.ajouts.find(x => x.id === b.dataset.q); if (!aj) return;
+      const v = isNaN(Number(b.dataset.v)) ? b.dataset.v : Number(b.dataset.v);
+      if (aj.v === v) delete aj.v; else aj.v = v;
+      b.parentElement.querySelectorAll(".pill").forEach(x => x.classList.toggle("on", x === b && aj.v !== undefined));
+    } else if (a === "ajout-retirer") {
+      m.ajouts = m.ajouts.filter(x => x.id !== b.dataset.id);
+      m.modifie = Date.now(); persist(); redessinerSaisie(u); toast("Question retirée."); return;
     } else if (a === "p" || a === "i" || a === "t") {
       const c = m.cotation[b.dataset.r] = m.cotation[b.dataset.r] || {};
       const v = a === "t" ? b.dataset.v : Number(b.dataset.v);
@@ -619,13 +646,6 @@
     m.modifie = Date.now(); persist(); majBarre(u);
   });
   bottom.addEventListener("click", e => { const b = e.target.closest("[data-act=enregistrer]"); if (b) enregistrer(b.dataset.code, b.dataset.suite); });
-  app.addEventListener("input", e => {
-    if (e.target.id === "remarques" || e.target.id === "question-libre") {
-      const r = route(); if (r.name !== "saisie") return; const m = mesU(r.code);
-      if (e.target.id === "remarques") m.remarques = e.target.value; else m.question = e.target.value;
-      m.modifie = Date.now(); persist(); majBarre(parCode(r.code));
-    }
-  });
   app.addEventListener("change", e => {
     const el = e.target;
     if (el.name === "perim") { const z = document.getElementById("f-metiers"); if (z) z.classList.toggle("inactif", el.value !== "sacicap"); }
@@ -634,6 +654,17 @@
   });
   app.addEventListener("submit", e => {
     if (e.target.id === "f-profil") { e.preventDefault(); soumettreProfil(e.target); }
+    if (e.target.id === "f-ajout") {
+      e.preventDefault(); const r = route(); if (r.name !== "saisie") return;
+      const u = parCode(r.code), m = mesU(r.code);
+      const texte = (e.target.querySelector("#ajout-texte").value || "").trim().slice(0, 300);
+      if (!texte) { toast("Écrivez d'abord votre question."); return; }
+      if (m.ajouts.length >= MAX_AJOUTS) { toast("Nombre maximal de questions ajoutées atteint."); return; }
+      const id = idAjout(r.code, m.ajouts);
+      m.ajouts.push({ id, texte }); m.modifie = Date.now(); persist();
+      redessinerSaisie(u); toast("Question ajoutée : répondez-y comme aux autres.");
+      const el = app.querySelector(`.q[data-q="${id}"]`); if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
     if (e.target.id === "f-cle") { e.preventDefault(); const v = e.target.querySelector("#cle").value.trim(); if (v === CFG.resultatsCle) { try { sessionStorage.setItem("carto.cle", v); } catch (x) {} render(); } else toast("Clé incorrecte."); }
   });
   // Infobulles

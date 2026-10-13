@@ -20,11 +20,11 @@ Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à �
 
 - `#/` accueil et identification (société, fonction, prénom facultatif, périmètre)
 - `#/univers` liste des univers avec progression et état d'envoi
-- `#/u/GOV` saisie d'un univers : maîtrise des risques (avec une question libre à proposer), cotation des risques (probabilité, impact, traitement), remarques
+- `#/u/GOV` saisie d'un univers : maîtrise des risques (avec la possibilité d'ajouter jusqu'à cinq questions, cotées comme les autres), cotation des risques (probabilité, impact, traitement)
 - `#/aide` échelles de cotation et cadre juridique
-- `#/resultats` page animateur : filtres, indicateurs, matrice, top 10, divergences, questions proposées, remarques, exports
+- `#/resultats` page animateur : filtres, indicateurs, matrice, top 10, divergences, questions ajoutées par les participants (avec leur réponse), exports
 
-Chaque univers est enregistré séparément : une réponse partielle compte. La question libre proposée dans un univers est stockée dans le champ `maitrise` (clé `_question`), sans colonne supplémentaire dans Supabase ; elle apparaît dans la page de résultats et dans les exports CSV. Les réponses sont aussi conservées sur l'appareil, ce qui permet de reprendre plus tard et de renvoyer automatiquement ce qui n'a pas pu partir.
+Chaque univers est enregistré séparément : une réponse partielle compte. Les questions ajoutées par un participant dans un univers sont stockées dans le champ `maitrise` sous la clé `_ajouts` (liste `{id, texte, v}`, identifiants `GOV-X1`, `GOV-X2`...), sans colonne supplémentaire dans Supabase ; elles n'entrent pas dans la moyenne de maîtrise et apparaissent à part, avec la réponse donnée, dans la page de résultats et dans les exports CSV. Le champ `remarques` de la table n'est plus alimenté depuis la version 4 du référentiel (décision du 13 octobre 2026). Les réponses sont aussi conservées sur l'appareil, ce qui permet de reprendre plus tard et de renvoyer automatiquement ce qui n'a pas pu partir.
 
 ## Brancher Supabase
 

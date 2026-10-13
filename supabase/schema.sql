@@ -12,9 +12,9 @@ create table if not exists public.reponses (
   perimetre text,
   metiers jsonb,
   univers text not null,
-  maitrise jsonb not null default '{}'::jsonb,   -- réponses par question ; la clé _question porte la question libre proposée par le participant
+  maitrise jsonb not null default '{}'::jsonb,   -- réponses par question ; la clé _ajouts porte les questions ajoutées par le participant (liste {id, texte, v})
   cotation jsonb not null default '{}'::jsonb,
-  remarques text,
+  remarques text,                                -- plus alimenté depuis le référentiel v4 (13 octobre 2026)
   version_ref text,
   -- garde-fous simples contre les charges aberrantes
   constraint reponses_univers_len check (char_length(univers) <= 12),

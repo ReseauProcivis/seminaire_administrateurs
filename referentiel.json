@@ -1,6 +1,6 @@
 {
- "version": "2026-10-12-v3-reunion-equipe",
- "source": "Référentiel de Guillaume Macher (12 octobre 2026) revu avec les remarques des groupes marchés et fonctions support de l'atelier du 12 octobre, puis avec les décisions de la réunion d'équipe Procivis UES-AP du 12 octobre (relevé de décision dicté par Guillaume Macher)",
+ "version": "2026-10-13-v4-arbitrages-guillaume",
+ "source": "Référentiel de Guillaume Macher (12 octobre 2026) revu avec les remarques des groupes marchés et fonctions support de l'atelier du 12 octobre, puis avec les décisions de la réunion d'équipe Procivis UES-AP du 12 octobre (relevé de décision dicté par Guillaume Macher), puis avec les arbitrages de Guillaume Macher du 13 octobre 2026 sur les neuf points restés ouverts",
  "echelles": {
   "maitrise": [
    {
@@ -167,7 +167,7 @@
     },
     {
      "id": "GOV-Q4",
-     "texte": "Les administrateurs suivent une formation régulière adaptée à leur mandat (enjeux HLM, financiers et coopératifs)."
+     "texte": "Les administrateurs suivent une formation régulière adaptée à leur mandat (responsabilité de l'administrateur, conflits d'intérêts, droit coopératif)."
     },
     {
      "id": "GOV-Q5",
@@ -319,7 +319,7 @@
    "bloc": "soc",
    "metiers": [],
    "reference": "Fonds propres, participations, garanties",
-   "intro": "Trésorerie, solidité des filiales et participations, engagements hors bilan, exposition aux taux.",
+   "intro": "Trésorerie, solidité des filiales et participations, engagements hors bilan, exposition aux taux et aux coûts de l'énergie.",
    "questions": [
     {
      "id": "FIN-Q1",
@@ -362,6 +362,10 @@
     {
      "id": "FIN-6",
      "libelle": "Défaillance d'une SACICAP ou d'une de ses filiales"
+    },
+    {
+     "id": "FIN-7",
+     "libelle": "Augmentation des coûts de l'énergie"
     }
    ]
   },
@@ -490,7 +494,7 @@
    "bloc": "soc",
    "metiers": [],
    "reference": "Loi Climat et résilience ; RE2020 ; reporting de durabilité (directive CSRD, selon les seuils applicables) ; code civil, art. 1833",
-   "intro": "Gouvernance et pilotage de la RSE, transition écologique du patrimoine et des opérations, aléas climatiques, engagement social et obligations extra-financières.",
+   "intro": "Gouvernance et pilotage de la RSE, transition écologique du patrimoine et des opérations, aléas climatiques, contraintes réglementaires sur les énergies, engagement social et obligations extra-financières.",
    "questions": [
     {
      "id": "RSE-Q1",
@@ -557,6 +561,10 @@
     {
      "id": "RSE-9",
      "libelle": "Perte d'accès à des financements ou à des partenariats conditionnés à des critères RSE"
+    },
+    {
+     "id": "RSE-10",
+     "libelle": "Bannissement de certaines énergies ou vecteurs énergétiques par voie réglementaire"
     }
    ]
   },
@@ -728,10 +736,6 @@
      "libelle": "Stock de logements achevés invendus"
     },
     {
-     "id": "PRO-3",
-     "libelle": "Désolvabilisation des accédants (taux, conditions de crédit)"
-    },
-    {
      "id": "PRO-4",
      "libelle": "Modification ou suppression d'un dispositif d'aide à l'accession"
     },
@@ -884,10 +888,6 @@
      "texte": "Des scénarios de baisse de volume et de prix sont intégrés aux budgets."
     },
     {
-     "id": "MAR-Q3",
-     "texte": "Les évolutions des taux et des conditions d'octroi de crédit sont suivies."
-    },
-    {
      "id": "MAR-Q4",
      "texte": "La concurrence (promoteurs, réseaux d'agences, plateformes) est analysée chaque année."
     },
@@ -903,7 +903,7 @@
     },
     {
      "id": "MAR-2",
-     "libelle": "Hausse des taux et durcissement du crédit"
+     "libelle": "Durcissement de l'octroi de crédit"
     },
     {
      "id": "MAR-3",

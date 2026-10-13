@@ -1,6 +1,6 @@
 {
- "version": "2026-10-13-v4-arbitrages-guillaume",
- "source": "Référentiel de Guillaume Macher (12 octobre 2026) revu avec les remarques des groupes marchés et fonctions support de l'atelier du 12 octobre, puis avec les décisions de la réunion d'équipe Procivis UES-AP du 12 octobre (relevé de décision dicté par Guillaume Macher), puis avec les arbitrages de Guillaume Macher du 13 octobre 2026 sur les neuf points restés ouverts",
+ "version": "2026-10-13-v5-relecture-guillaume",
+ "source": "Référentiel de Guillaume Macher (12 octobre 2026) revu avec les remarques des groupes marchés et fonctions support de l'atelier du 12 octobre, les décisions de la réunion d'équipe Procivis UES-AP du 12 octobre, les arbitrages de Guillaume Macher du 13 octobre sur les neuf points restés ouverts, puis sa relecture de cohérence du 13 octobre (suppression du chapitre Marché, mesures et risques ajoutés, doublons regroupés, nomenclature CODE-M et CODE-R, liens entre mesures et risques)",
  "echelles": {
   "maitrise": [
    {
@@ -69,7 +69,7 @@
     "nom": "Catastrophique",
     "financier": "Plus de 15 % des fonds propres ou perte d'une filiale",
     "juridique": "Remise en cause de l'agrément, responsabilité pénale engagée",
-    "image": "Atteinte à la marque Procivis dans tout le réseau"
+    "image": "Écho national ou atteinte à la réputation de l'ensemble du réseau"
    }
   },
   "seuils": [
@@ -95,7 +95,8 @@
     "v": "red",
     "l": "Réduire"
    }
-  ]
+  ],
+  "impact_note": "Les pourcentages s'entendent des fonds propres de la structure évaluée : ceux de la SACICAP du participant en périmètre SACICAP, ceux de l'ensemble du réseau en périmètre réseau."
  },
  "blocs": [
   {
@@ -131,7 +132,7 @@
   {
    "id": "syn",
    "nom": "Syndic de copropriété",
-   "description": "Gestion de copropriétés, assemblées générales, travaux, comptes séparés."
+   "description": "Gestion de copropriétés, assemblées générales, travaux, fonds travaux."
   },
   {
    "id": "log",
@@ -147,57 +148,90 @@
    "bloc": "soc",
    "metiers": [],
    "reference": "Loi du 10 septembre 1947 ; CCH L.215-1 et suivants",
-   "intro": "Pilotage de la SACICAP par son conseil d'administration, articulation avec ses filiales et avec Procivis UES-AP, rôle des administrateurs.",
+   "intro": "Pilotage de la SACICAP par son conseil d'administration, articulation avec ses filiales, rôle et renouvellement des administrateurs, projet coopératif.",
    "questions": [
     {
-     "id": "GOV-Q1",
+     "id": "GOV-M1",
      "texte": "Le conseil dispose d'une stratégie pluriannuelle formalisée, revue chaque année, qui couvre tous les métiers exercés."
     },
     {
-     "id": "GOV-Q2",
+     "id": "GOV-M2",
      "texte": "La cartographie des risques est présentée et débattue au conseil au moins une fois par an."
     },
     {
-     "id": "GOV-Q3",
+     "id": "GOV-M3",
      "texte": "Les délégations de pouvoirs sont formalisées et contrôlées."
     },
     {
-     "id": "GOV-Q6",
+     "id": "GOV-M4",
      "texte": "Les conventions réglementées entre la SACICAP, ses filiales et ses participations sont formalisées et contrôlées."
     },
     {
-     "id": "GOV-Q4",
+     "id": "GOV-M5",
      "texte": "Les administrateurs suivent une formation régulière adaptée à leur mandat (responsabilité de l'administrateur, conflits d'intérêts, droit coopératif)."
     },
     {
-     "id": "GOV-Q5",
+     "id": "GOV-M6",
      "texte": "La succession des dirigeants et des administrateurs est anticipée."
+    },
+    {
+     "id": "GOV-M7",
+     "texte": "Le projet coopératif de la SACICAP (valeurs, missions, intérêt des sociétaires) est formalisé et expliqué aux parties prenantes."
+    },
+    {
+     "id": "GOV-M8",
+     "texte": "La parité au sein du conseil et des instances est suivie et prise en compte lors du renouvellement des mandats."
     }
    ],
    "risques": [
     {
-     "id": "GOV-1",
-     "libelle": "Défaillance de gouvernance : décision mal documentée, conflit d'intérêts, mandats croisés non maîtrisés"
+     "id": "GOV-R1",
+     "libelle": "Défaillance de gouvernance : décision mal documentée, conflit d'intérêts, mandats croisés non maîtrisés",
+     "mesures": [
+      "GOV-M3",
+      "GOV-M4",
+      "GOV-M5",
+      "GOV-M2"
+     ]
     },
     {
-     "id": "GOV-2",
-     "libelle": "Dépendance à un dirigeant unique"
+     "id": "GOV-R2",
+     "libelle": "Dépendance à un dirigeant unique",
+     "mesures": [
+      "GOV-M6",
+      "GOV-M3"
+     ]
     },
     {
-     "id": "GOV-7",
-     "libelle": "Dépendance à un métier unique"
+     "id": "GOV-R3",
+     "libelle": "Dépendance à un métier unique",
+     "mesures": [
+      "GOV-M1"
+     ]
     },
     {
-     "id": "GOV-4",
-     "libelle": "Perte d'engagement ou de compétence des administrateurs (renouvellement, disponibilité)"
+     "id": "GOV-R4",
+     "libelle": "Perte d'engagement ou de compétence des administrateurs (renouvellement, disponibilité)",
+     "mesures": [
+      "GOV-M5",
+      "GOV-M6"
+     ]
     },
     {
-     "id": "GOV-5",
-     "libelle": "Dilution du projet coopératif et perte de lisibilité du modèle auprès des parties prenantes"
+     "id": "GOV-R5",
+     "libelle": "Dilution du projet coopératif et perte de lisibilité du modèle auprès des parties prenantes",
+     "mesures": [
+      "GOV-M1",
+      "GOV-M5",
+      "GOV-M7"
+     ]
     },
     {
-     "id": "GOV-6",
-     "libelle": "Non-respect des recommandations en matière de parité dans les instances"
+     "id": "GOV-R6",
+     "libelle": "Non-respect des recommandations en matière de parité dans les instances",
+     "mesures": [
+      "GOV-M8"
+     ]
     }
    ]
   },
@@ -208,50 +242,75 @@
    "bloc": "soc",
    "metiers": [],
    "reference": "CCH L.215-1 à L.215-8 et R.215-1 et suivants",
-   "intro": "Respect de l'objet social, de la convention avec l'État et des règles coopératives.",
+   "intro": "Respect de l'objet social, des obligations statutaires et des règles coopératives ; veille sur l'évolution du statut et de la fiscalité.",
    "questions": [
     {
-     "id": "JUR-Q1",
-     "texte": "Les engagements de la convention avec l'État et les obligations vis-à-vis de Procivis UES-AP sont suivis par une personne identifiée."
+     "id": "JUR-M1",
+     "texte": "Les obligations statutaires de la SACICAP et celles vis-à-vis de Procivis UES-AP sont suivies par une personne identifiée."
     },
     {
-     "id": "JUR-Q3",
+     "id": "JUR-M2",
      "texte": "La SACICAP respecte ses obligations coopératives (capital, parts sociales, réserves, affectation du résultat, révision coopérative).",
      "texte_reseau": "Les SACICAP respectent leurs obligations coopératives (capital, parts sociales, réserves, affectation du résultat, révision coopérative)."
     },
     {
-     "id": "JUR-Q5",
+     "id": "JUR-M3",
      "texte": "L'objet social de la SACICAP est connu des administrateurs et sa réalisation est vérifiée."
     },
     {
-     "id": "JUR-Q4",
+     "id": "JUR-M4",
      "texte": "La capacité de l'État à faire évoluer le statut des SACICAP est suivie et ses effets sont anticipés."
     },
     {
-     "id": "JUR-Q7",
-     "texte": "Une veille réglementaire couvre aussi la fiscalité."
+     "id": "JUR-M5",
+     "texte": "Une veille réglementaire, incluant la fiscalité, est organisée et ses conclusions sont présentées au conseil."
+    },
+    {
+     "id": "JUR-M6",
+     "texte": "Les activités économiques de la SACICAP et de ses filiales sont revues au regard de l'objet social et du règlement intérieur du réseau, et les écarts sont signalés à Procivis UES-AP."
     }
    ],
    "risques": [
     {
-     "id": "JUR-1",
-     "libelle": "Remise en cause de l'agrément ou sanction administrative pour manquement au statut"
+     "id": "JUR-R1",
+     "libelle": "Remise en cause de l'agrément ou sanction administrative pour manquement au statut",
+     "mesures": [
+      "JUR-M1",
+      "JUR-M2",
+      "JUR-M3"
+     ]
     },
     {
-     "id": "JUR-2",
-     "libelle": "Sortie du périmètre de l'objet social par une activité ou une participation nouvelle"
+     "id": "JUR-R2",
+     "libelle": "Sortie du périmètre de l'objet social par une activité ou une participation nouvelle",
+     "mesures": [
+      "JUR-M3",
+      "JUR-M6"
+     ]
     },
     {
-     "id": "JUR-3",
-     "libelle": "Non-respect des règles coopératives (capital, réserves, distribution) ou irrégularité d'assemblée générale"
+     "id": "JUR-R3",
+     "libelle": "Non-respect des règles coopératives (capital, réserves, distribution) ou irrégularité d'assemblée générale",
+     "mesures": [
+      "JUR-M2"
+     ]
     },
     {
-     "id": "JUR-4",
-     "libelle": "Évolution législative défavorable au modèle SACICAP (statut, missions, fiscalité)"
+     "id": "JUR-R4",
+     "libelle": "Évolution législative défavorable au modèle SACICAP (statut, missions, fiscalité)",
+     "mesures": [
+      "JUR-M4",
+      "JUR-M5"
+     ],
+     "subi": true
     },
     {
-     "id": "JUR-5",
-     "libelle": "Application hétérogène de l'objet social et du règlement intérieur par les SACICAP, pour ce qui concerne notamment leur activité économique"
+     "id": "JUR-R5",
+     "libelle": "Application hétérogène de l'objet social et du règlement intérieur par les SACICAP, pour ce qui concerne notamment leur activité économique",
+     "mesures": [
+      "JUR-M3",
+      "JUR-M6"
+     ]
     }
    ]
   },
@@ -262,53 +321,71 @@
    "bloc": "soc",
    "metiers": [],
    "reference": "Loi Sapin II ; Code monétaire et financier ; RGPD",
-   "intro": "Anticorruption, lutte contre le blanchiment, protection des données, contentieux et achats.",
+   "intro": "Anticorruption, lutte contre le blanchiment, protection des données personnelles, conflits d'intérêts, contentieux et achats.",
    "questions": [
     {
-     "id": "CONF-Q1",
+     "id": "CONF-M1",
      "texte": "Un dispositif anticorruption (code de conduite, cartographie, alerte interne) est en place au sens de la loi Sapin II, si applicable."
     },
     {
-     "id": "CONF-Q2",
-     "texte": "Les procédures de lutte contre le blanchiment et le financement du terrorisme sont appliquées, avec déclarations à Tracfin le cas échéant."
+     "id": "CONF-M2",
+     "texte": "Les procédures de lutte contre le blanchiment et le financement du terrorisme (identification des clients, vigilance, déclarations à Tracfin) sont appliquées dans toutes les activités, en particulier en transaction et en gestion."
     },
     {
-     "id": "CONF-Q3",
+     "id": "CONF-M3",
      "texte": "Un registre des traitements RGPD est tenu, la transparence des traitements est assurée auprès des personnes et un référent est désigné."
     },
     {
-     "id": "CONF-Q4",
+     "id": "CONF-M4",
      "texte": "Les contentieux en cours sont recensés et provisionnés avec les conseils."
     },
     {
-     "id": "CONF-Q5",
+     "id": "CONF-M5",
      "texte": "Des procédures d'achat et de bonnes pratiques de mise en concurrence sont formalisées en interne."
     },
     {
-     "id": "CONF-Q6",
+     "id": "CONF-M6",
      "texte": "Les conflits d'intérêts des administrateurs et des dirigeants sont déclarés et suivis."
     }
    ],
    "risques": [
     {
-     "id": "CONF-1",
-     "libelle": "Sanction pour manquement aux obligations anticorruption"
+     "id": "CONF-R1",
+     "libelle": "Sanction pour manquement aux obligations anticorruption",
+     "mesures": [
+      "CONF-M1",
+      "CONF-M6"
+     ]
     },
     {
-     "id": "CONF-2",
-     "libelle": "Sanction pour manquement à la lutte contre le blanchiment et le financement du terrorisme"
+     "id": "CONF-R2",
+     "libelle": "Sanction pour manquement à la lutte contre le blanchiment et le financement du terrorisme",
+     "mesures": [
+      "CONF-M2"
+     ]
     },
     {
-     "id": "CONF-3",
-     "libelle": "Non-conformité au RGPD"
+     "id": "CONF-R3",
+     "libelle": "Fuite de données personnelles ou manquement au RGPD (clients, locataires, bénéficiaires, salariés)",
+     "mesures": [
+      "CONF-M3",
+      "CYB-M1",
+      "CYB-M2"
+     ]
     },
     {
-     "id": "CONF-4",
-     "libelle": "Contentieux majeur avec un client, un partenaire ou un salarié"
+     "id": "CONF-R4",
+     "libelle": "Contentieux majeur avec un client, un partenaire ou un salarié",
+     "mesures": [
+      "CONF-M4"
+     ]
     },
     {
-     "id": "CONF-5",
-     "libelle": "Irrégularité dans une procédure d'achat interne ou de mise en concurrence pour le secteur HLM"
+     "id": "CONF-R5",
+     "libelle": "Irrégularité dans une procédure d'achat interne ou de mise en concurrence pour le secteur HLM",
+     "mesures": [
+      "CONF-M5"
+     ]
     }
    ]
   },
@@ -322,50 +399,81 @@
    "intro": "Trésorerie, solidité des filiales et participations, engagements hors bilan, exposition aux taux et aux coûts de l'énergie.",
    "questions": [
     {
-     "id": "FIN-Q1",
+     "id": "FIN-M1",
      "texte": "Un plan de trésorerie de 12 à 24 mois est tenu et présenté à la direction."
     },
     {
-     "id": "FIN-Q2",
+     "id": "FIN-M2",
      "texte": "Les engagements hors bilan (garanties, cautions) sont recensés et suivis."
     },
     {
-     "id": "FIN-Q3",
+     "id": "FIN-M3",
      "texte": "La santé financière des filiales et participations fait l'objet d'un reporting régulier avec seuils d'alerte."
     },
     {
-     "id": "FIN-Q5",
+     "id": "FIN-M4",
      "texte": "Des scénarios de stress (hausse des taux, chute des ventes, défaillance d'une filiale) sont modélisés."
+    },
+    {
+     "id": "FIN-M5",
+     "texte": "Les relations avec les partenaires financiers (banques, Banque des Territoires, Action Logement) sont suivies et les sources de financement sont diversifiées."
+    },
+    {
+     "id": "FIN-M6",
+     "texte": "L'exposition de la SACICAP et de ses filiales à la hausse des coûts de l'énergie est chiffrée et intégrée aux budgets."
     }
    ],
    "risques": [
     {
-     "id": "FIN-1",
-     "libelle": "Dépréciation inadéquate des titres de filiales ou de participations"
+     "id": "FIN-R1",
+     "libelle": "Dépréciation inadéquate des titres de filiales ou de participations",
+     "mesures": [
+      "FIN-M3"
+     ]
     },
     {
-     "id": "FIN-2",
-     "libelle": "Appel en garantie ou soutien financier imprévu à une filiale"
+     "id": "FIN-R2",
+     "libelle": "Appel en garantie ou soutien financier imprévu à une filiale",
+     "mesures": [
+      "FIN-M2",
+      "FIN-M3"
+     ]
     },
     {
-     "id": "FIN-3",
-     "libelle": "Exposition à la variation des taux d'intérêt"
+     "id": "FIN-R3",
+     "libelle": "Exposition à la variation des taux d'intérêt",
+     "mesures": [
+      "FIN-M4"
+     ]
     },
     {
-     "id": "FIN-4",
-     "libelle": "Retrait ou fin du soutien d'un partenaire financier"
+     "id": "FIN-R4",
+     "libelle": "Retrait ou fin du soutien d'un partenaire financier",
+     "mesures": [
+      "FIN-M5"
+     ]
     },
     {
-     "id": "FIN-5",
-     "libelle": "Tension de trésorerie ou difficultés liées à la défaillance d'un débiteur"
+     "id": "FIN-R5",
+     "libelle": "Tension de trésorerie ou difficultés liées à la défaillance d'un débiteur",
+     "mesures": [
+      "FIN-M1"
+     ]
     },
     {
-     "id": "FIN-6",
-     "libelle": "Défaillance d'une SACICAP ou d'une de ses filiales"
+     "id": "FIN-R6",
+     "libelle": "Défaillance d'une SACICAP ou d'une de ses filiales",
+     "mesures": [
+      "FIN-M3",
+      "FIN-M4"
+     ]
     },
     {
-     "id": "FIN-7",
-     "libelle": "Augmentation des coûts de l'énergie"
+     "id": "FIN-R7",
+     "libelle": "Augmentation des coûts de l'énergie",
+     "mesures": [
+      "FIN-M6"
+     ]
     }
    ]
   },
@@ -376,57 +484,82 @@
    "bloc": "soc",
    "metiers": [],
    "reference": "Code du travail ; DUERP",
-   "intro": "Compétences clés, habilitations professionnelles, santé et sécurité, transmission des savoir-faire.",
+   "intro": "Compétences clés, recrutement, habilitations professionnelles, santé et sécurité, climat social, égalité professionnelle, transmission des savoir-faire.",
    "questions": [
     {
-     "id": "RH-Q1",
+     "id": "RH-M1",
      "texte": "Les postes clés sont identifiés et disposent d'un binôme ou d'un plan de succession."
     },
     {
-     "id": "RH-Q2",
+     "id": "RH-M2",
      "texte": "La formation continue obligatoire des professionnels de l'immobilier est planifiée et suivie."
     },
     {
-     "id": "RH-Q3",
+     "id": "RH-M3",
      "texte": "Le document unique d'évaluation des risques professionnels est à jour."
     },
     {
-     "id": "RH-Q4",
+     "id": "RH-M4",
      "texte": "Les indicateurs sociaux (turnover, absentéisme) sont suivis par la direction."
     },
     {
-     "id": "RH-Q5",
+     "id": "RH-M5",
      "texte": "Les savoir-faire métier (montage d'opérations, gestion, syndic) sont formalisés et transmis (procédures, binômes, tutorat)."
     },
     {
-     "id": "RH-Q6",
+     "id": "RH-M6",
      "texte": "Les obligations en matière d'égalité professionnelle femmes-hommes et de prévention et de lutte contre le harcèlement et les discriminations sont respectées et suivies."
+    },
+    {
+     "id": "RH-M7",
+     "texte": "Les métiers en tension sont identifiés et une politique d'attractivité (rémunération, alternance, partenariats avec les écoles, marque employeur) est formalisée."
     }
    ],
    "risques": [
     {
-     "id": "RH-1",
-     "libelle": "Départ d'une compétence clé"
+     "id": "RH-R1",
+     "libelle": "Départ d'une compétence clé",
+     "mesures": [
+      "RH-M1",
+      "RH-M5"
+     ]
     },
     {
-     "id": "RH-2",
-     "libelle": "Difficulté de recrutement sur les métiers en tension"
+     "id": "RH-R2",
+     "libelle": "Difficulté de recrutement sur les métiers en tension",
+     "mesures": [
+      "RH-M7",
+      "RH-M4"
+     ]
     },
     {
-     "id": "RH-3",
-     "libelle": "Accident du travail"
+     "id": "RH-R3",
+     "libelle": "Accident du travail",
+     "mesures": [
+      "RH-M3"
+     ]
     },
     {
-     "id": "RH-4",
-     "libelle": "Dégradation du climat social ou risques psychosociaux"
+     "id": "RH-R4",
+     "libelle": "Dégradation du climat social ou risques psychosociaux",
+     "mesures": [
+      "RH-M3",
+      "RH-M4"
+     ]
     },
     {
-     "id": "RH-5",
-     "libelle": "Non-conformité des habilitations et de la formation des professionnels réglementés"
+     "id": "RH-R5",
+     "libelle": "Non-conformité des habilitations et de la formation des professionnels réglementés",
+     "mesures": [
+      "RH-M2"
+     ]
     },
     {
-     "id": "RH-6",
-     "libelle": "Situation de harcèlement, de discrimination ou manquement à l'égalité professionnelle"
+     "id": "RH-R6",
+     "libelle": "Situation de harcèlement, de discrimination ou manquement à l'égalité professionnelle",
+     "mesures": [
+      "RH-M6"
+     ]
     }
    ]
   },
@@ -437,53 +570,73 @@
    "bloc": "soc",
    "metiers": [],
    "reference": "RGPD ; continuité d'activité",
-   "intro": "Systèmes d'information, fraude, données personnelles, intelligence artificielle, continuité d'activité.",
+   "intro": "Systèmes d'information, fraude, sécurité des données, intelligence artificielle, continuité d'activité, prestataires informatiques.",
    "questions": [
     {
-     "id": "CYB-Q1",
+     "id": "CYB-M1",
      "texte": "Les sauvegardes sont externalisées, chiffrées et testées régulièrement."
     },
     {
-     "id": "CYB-Q2",
+     "id": "CYB-M2",
      "texte": "Les collaborateurs sont sensibilisés chaque année aux risques cyber (hameçonnage, fraude au président, usage des données)."
     },
     {
-     "id": "CYB-Q3",
+     "id": "CYB-M3",
      "texte": "Un plan de continuité d'activité et une cellule de crise sont formalisés et testés."
     },
     {
-     "id": "CYB-Q4",
+     "id": "CYB-M4",
      "texte": "Les virements font l'objet d'une double validation et d'un contrôle des changements de RIB."
     },
     {
-     "id": "CYB-Q5",
+     "id": "CYB-M5",
      "texte": "Les usages de l'intelligence artificielle sont encadrés par une charte (données confidentielles, relecture)."
+    },
+    {
+     "id": "CYB-M6",
+     "texte": "Les prestataires informatiques critiques sont identifiés et contractualisés (niveaux de service, sécurité, réversibilité), et une solution de remplacement est connue."
     }
    ],
    "risques": [
     {
-     "id": "CYB-1",
-     "libelle": "Cyberattaque ou rançongiciel paralysant l'activité"
+     "id": "CYB-R1",
+     "libelle": "Cyberattaque ou rançongiciel paralysant l'activité",
+     "mesures": [
+      "CYB-M1",
+      "CYB-M2",
+      "CYB-M3"
+     ]
     },
     {
-     "id": "CYB-2",
-     "libelle": "Fraude au virement, faux fournisseur ou faux RIB"
+     "id": "CYB-R2",
+     "libelle": "Fraude au virement, faux fournisseur ou faux RIB",
+     "mesures": [
+      "CYB-M4",
+      "CYB-M2"
+     ]
     },
     {
-     "id": "CYB-3",
-     "libelle": "Fuite de données personnelles (clients, locataires, bénéficiaires, salariés)"
+     "id": "CYB-R3",
+     "libelle": "Indisponibilité d'un outil critique (logiciel de gestion, de syndic, de comptabilité)",
+     "mesures": [
+      "CYB-M1",
+      "CYB-M3",
+      "CYB-M6"
+     ]
     },
     {
-     "id": "CYB-4",
-     "libelle": "Indisponibilité d'un outil critique (logiciel de gestion, de syndic, de comptabilité)"
+     "id": "CYB-R4",
+     "libelle": "Usage non maîtrisé de l'intelligence artificielle (fuite ou erreur)",
+     "mesures": [
+      "CYB-M5"
+     ]
     },
     {
-     "id": "CYB-5",
-     "libelle": "Usage non maîtrisé de l'intelligence artificielle (fuite ou erreur)"
-    },
-    {
-     "id": "CYB-6",
-     "libelle": "Dépendance à un prestataire informatique unique"
+     "id": "CYB-R5",
+     "libelle": "Dépendance à un prestataire informatique unique",
+     "mesures": [
+      "CYB-M6"
+     ]
     }
    ]
   },
@@ -497,74 +650,104 @@
    "intro": "Gouvernance et pilotage de la RSE, transition écologique du patrimoine et des opérations, aléas climatiques, contraintes réglementaires sur les énergies, engagement social et obligations extra-financières.",
    "questions": [
     {
-     "id": "RSE-Q1",
+     "id": "RSE-M1",
      "texte": "Une stratégie RSE, incluant la transition écologique, est validée par le conseil et déclinée par métier."
     },
     {
-     "id": "RSE-Q2",
-     "texte": "La trajectoire énergétique du patrimoine détenu est connue et chiffrée."
+     "id": "RSE-M2",
+     "texte": "La trajectoire énergétique du patrimoine détenu (étiquettes DPE, travaux, financement) est connue et chiffrée."
     },
     {
-     "id": "RSE-Q9",
+     "id": "RSE-M3",
      "texte": "Les étiquettes énergétiques du patrimoine géré sont connues et des actions de sensibilisation des propriétaires sont menées."
     },
     {
-     "id": "RSE-Q3",
+     "id": "RSE-M4",
      "texte": "Les risques climatiques physiques (inondation, argiles, chaleur) sont évalués sur les opérations et le patrimoine."
     },
     {
-     "id": "RSE-Q5",
+     "id": "RSE-M5",
      "texte": "La RSE est portée par la gouvernance : un administrateur ou un comité est référent et un responsable opérationnel est désigné."
     },
     {
-     "id": "RSE-Q6",
+     "id": "RSE-M6",
      "texte": "Des indicateurs RSE et données extra-financières (environnement, social, gouvernance) sont définis, mesurés chaque année et restitués aux associés et aux parties prenantes."
     },
     {
-     "id": "RSE-Q7",
+     "id": "RSE-M7",
      "texte": "Les parties prenantes (salariés, clients, locataires, collectivités, associés coopérateurs) sont associées à la démarche RSE."
     },
     {
-     "id": "RSE-Q8",
+     "id": "RSE-M8",
      "texte": "Une politique d'achats et de choix des partenaires intègre des critères sociaux et environnementaux."
     }
    ],
    "risques": [
     {
-     "id": "RSE-1",
-     "libelle": "Coût de la transition énergétique du parc locatif social non financé"
+     "id": "RSE-R1",
+     "libelle": "Coût de la transition énergétique du patrimoine détenu non financé",
+     "mesures": [
+      "RSE-M2"
+     ]
     },
     {
-     "id": "RSE-2",
-     "libelle": "Sinistres liés aux aléas climatiques (argiles, inondations, sécheresse, manque d'eau)"
+     "id": "RSE-R2",
+     "libelle": "Sinistres liés aux aléas climatiques (argiles, inondations, sécheresse, manque d'eau)",
+     "mesures": [
+      "RSE-M4"
+     ]
     },
     {
-     "id": "RSE-3",
-     "libelle": "Non-anticipation des seuils carbone à venir et des attentes clients en la matière"
+     "id": "RSE-R3",
+     "libelle": "Non-anticipation des seuils carbone à venir et des attentes clients en la matière",
+     "mesures": [
+      "RSE-M1",
+      "MOA-M4"
+     ]
     },
     {
-     "id": "RSE-4",
-     "libelle": "Évolution défavorable des aides à la rénovation"
+     "id": "RSE-R4",
+     "libelle": "Évolution défavorable des aides à la rénovation",
+     "mesures": [],
+     "subi": true
     },
     {
-     "id": "RSE-6",
-     "libelle": "Absence de pilotage de la RSE par le conseil : engagements non suivis, responsabilités floues"
+     "id": "RSE-R5",
+     "libelle": "Absence de pilotage de la RSE par le conseil : engagements non suivis, responsabilités floues",
+     "mesures": [
+      "RSE-M1",
+      "RSE-M5"
+     ]
     },
     {
-     "id": "RSE-7",
-     "libelle": "Exigences de reporting extra-financier non anticipées (partenaires financiers, donneurs d'ordre, réglementation)"
+     "id": "RSE-R6",
+     "libelle": "Exigences de reporting extra-financier non anticipées (partenaires financiers, donneurs d'ordre, réglementation)",
+     "mesures": [
+      "RSE-M6"
+     ]
     },
     {
-     "id": "RSE-8",
-     "libelle": "Écart entre les valeurs coopératives affichées et les pratiques sociales, de gouvernance et environnementales (greenwashing)"
+     "id": "RSE-R7",
+     "libelle": "Écart entre les valeurs coopératives affichées et les pratiques sociales, de gouvernance et environnementales (greenwashing)",
+     "mesures": [
+      "RSE-M1",
+      "RSE-M7",
+      "RSE-M8"
+     ]
     },
     {
-     "id": "RSE-9",
-     "libelle": "Perte d'accès à des financements ou à des partenariats conditionnés à des critères RSE"
+     "id": "RSE-R8",
+     "libelle": "Perte d'accès à des financements ou à des partenariats conditionnés à des critères RSE",
+     "mesures": [
+      "RSE-M6",
+      "RSE-M1"
+     ]
     },
     {
-     "id": "RSE-10",
-     "libelle": "Bannissement de certaines énergies ou vecteurs énergétiques par voie réglementaire"
+     "id": "RSE-R9",
+     "libelle": "Bannissement de certaines énergies ou vecteurs énergétiques par voie réglementaire",
+     "mesures": [],
+     "subi": true
     }
    ]
   },
@@ -575,60 +758,84 @@
    "bloc": "soc",
    "metiers": [],
    "reference": "Convention avec l'État ; CCH L.215-1",
-   "intro": "Engagements pris au titre de la convention avec l'État.",
+   "intro": "Engagements de la convention avec l'État, relation avec l'État, partenaires, instruction et recouvrement des aides, mesure de l'impact.",
    "questions": [
     {
-     "id": "MS-Q6",
-     "texte": "La relation avec l'État est pilotée et débouche sur des opportunités de partenariat tangibles."
+     "id": "MS-M1",
+     "texte": "La relation avec l'État est pilotée par un interlocuteur identifié, avec des rendez-vous réguliers et des propositions de partenariat."
     },
     {
-     "id": "MS-Q1",
-     "texte": "Les engagements de missions sociales sont programmés et suivis au regard des objectifs conventionnels."
+     "id": "MS-M2",
+     "texte": "Les engagements de la convention avec l'État sont suivis par une personne identifiée, programmés et mesurés au regard des objectifs conventionnels."
     },
     {
-     "id": "MS-Q2",
+     "id": "MS-M3",
      "texte": "Le recouvrement des avances, prêts et microcrédits est suivi et les pertes probables sont provisionnées."
     },
     {
-     "id": "MS-Q3",
+     "id": "MS-M4",
      "texte": "Les partenaires (opérateurs, banques, collectivités, associations) sont liés par convention avec un bilan annuel."
     },
     {
-     "id": "MS-Q4",
+     "id": "MS-M5",
      "texte": "L'impact des actions (ménages aidés, gains énergétiques, copropriétés redressées) est mesuré."
+    },
+    {
+     "id": "MS-M6",
+     "texte": "Les critères d'éligibilité aux aides sont formalisés et l'instruction des dossiers est contrôlée avant toute attribution (pièces justificatives, absence de conflit d'intérêts)."
     }
    ],
    "risques": [
     {
-     "id": "MS-1",
-     "libelle": "Non-atteinte des engagements de missions sociales conventionnels"
+     "id": "MS-R1",
+     "libelle": "Non-atteinte des engagements de missions sociales conventionnels",
+     "mesures": [
+      "MS-M2"
+     ]
     },
     {
-     "id": "MS-2",
-     "libelle": "Défaut de remboursement des ménages bénéficiaires"
+     "id": "MS-R2",
+     "libelle": "Défaut de remboursement des ménages bénéficiaires",
+     "mesures": [
+      "MS-M3"
+     ]
     },
     {
-     "id": "MS-3",
-     "libelle": "Évolution du cadre des missions sociales imposée par l'État (réorientation, budget, périmètre)"
+     "id": "MS-R3",
+     "libelle": "Évolution du cadre des missions sociales imposée par l'État (réorientation, budget, périmètre)",
+     "mesures": [
+      "MS-M1"
+     ],
+     "subi": true
     },
     {
-     "id": "MS-4",
-     "libelle": "Fraude ou attribution irrégulière d'une aide (dossier falsifié, conflit d'intérêts)"
+     "id": "MS-R4",
+     "libelle": "Fraude ou attribution irrégulière d'une aide (dossier falsifié, conflit d'intérêts)",
+     "mesures": [
+      "MS-M6",
+      "CONF-M6"
+     ]
     },
     {
-     "id": "MS-5",
-     "libelle": "Défaillance d'un opérateur ou d'un partenaire bancaire"
+     "id": "MS-R5",
+     "libelle": "Défaillance d'un opérateur ou d'un partenaire bancaire",
+     "mesures": [
+      "MS-M4"
+     ]
     },
     {
-     "id": "MS-6",
-     "libelle": "Difficulté à démontrer l'impact auprès des pouvoirs publics"
+     "id": "MS-R6",
+     "libelle": "Difficulté à démontrer l'impact auprès des pouvoirs publics",
+     "mesures": [
+      "MS-M5"
+     ]
     }
    ]
   },
   {
    "code": "MOA",
-   "nom": "Promotion (maîtrise d'ouvrage)",
-   "court": "Promotion (maîtrise d'ouvrage)",
+   "nom": "Maîtrise d'ouvrage (promotion, aménagement, logement social)",
+   "court": "Maîtrise d'ouvrage",
    "bloc": "met",
    "metiers": [
     "pro",
@@ -636,61 +843,95 @@
     "log"
    ],
    "reference": "Assurance construction ; RE2020",
-   "intro": "Conduite des opérations de construction et de réhabilitation, entreprises, assurances, normes.",
+   "intro": "Conduite des opérations de construction et de réhabilitation : foncier et autorisations, entreprises, sécurité des chantiers, assurances, normes, livraison.",
    "questions": [
     {
-     "id": "MOA-Q1",
+     "id": "MOA-M1",
      "texte": "La solvabilité et les assurances des entreprises de travaux sont vérifiées avant contrat."
     },
     {
-     "id": "MOA-Q2",
+     "id": "MOA-M2",
      "texte": "Un tableau de bord suit coûts, délais et réserves de chaque opération."
     },
     {
-     "id": "MOA-Q3",
+     "id": "MOA-M3",
      "texte": "Les assurances tous risques chantier sont souscrites."
     },
     {
-     "id": "MOA-Q4",
+     "id": "MOA-M4",
      "texte": "Les futurs seuils de la RE2020 et les objectifs bas carbone sont anticipés."
     },
     {
-     "id": "MOA-Q5",
+     "id": "MOA-M5",
      "texte": "Les réclamations et le service après livraison sont organisés et tracés."
     },
     {
-     "id": "MOA-Q6",
+     "id": "MOA-M6",
      "texte": "Les acquisitions foncières sont validées après études de sol, d'urbanisme et analyse des risques de recours."
+    },
+    {
+     "id": "MOA-M7",
+     "texte": "La sécurité des chantiers est organisée (coordonnateur sécurité et protection de la santé, plan de prévention, visites de chantier)."
+    },
+    {
+     "id": "MOA-M8",
+     "texte": "La conformité réglementaire et technique des opérations (RE2020, sécurité incendie, accessibilité) est vérifiée par un contrôleur technique et à la réception."
     }
    ],
    "risques": [
     {
-     "id": "MOA-1",
-     "libelle": "Défaillance d'une entreprise de travaux en cours de chantier"
+     "id": "MOA-R1",
+     "libelle": "Défaillance d'une entreprise de travaux en cours de chantier",
+     "mesures": [
+      "MOA-M1"
+     ]
     },
     {
-     "id": "MOA-2",
-     "libelle": "Dérive des coûts et des délais"
+     "id": "MOA-R2",
+     "libelle": "Dérive des coûts et des délais",
+     "mesures": [
+      "MOA-M2"
+     ]
     },
     {
-     "id": "MOA-3",
-     "libelle": "Sinistre ou malfaçon engageant la responsabilité du maître d'ouvrage"
+     "id": "MOA-R3",
+     "libelle": "Sinistre ou malfaçon engageant la responsabilité du maître d'ouvrage",
+     "mesures": [
+      "MOA-M3",
+      "MOA-M5",
+      "MOA-M8"
+     ]
     },
     {
-     "id": "MOA-4",
-     "libelle": "Accident grave sur un chantier"
+     "id": "MOA-R4",
+     "libelle": "Accident grave sur un chantier",
+     "mesures": [
+      "MOA-M7"
+     ]
     },
     {
-     "id": "MOA-5",
-     "libelle": "Non-conformité réglementaire ou technique (RE2020, incendie, accessibilité)"
+     "id": "MOA-R5",
+     "libelle": "Non-conformité réglementaire ou technique (RE2020, incendie, accessibilité)",
+     "mesures": [
+      "MOA-M4",
+      "MOA-M8"
+     ]
     },
     {
-     "id": "MOA-6",
-     "libelle": "Marge insuffisante liée à une dérive du coût de revient"
+     "id": "MOA-R6",
+     "libelle": "Marge insuffisante liée à une dérive du coût de revient",
+     "mesures": [
+      "MOA-M2",
+      "AMC-M4",
+      "PRO-M1"
+     ]
     },
     {
-     "id": "MOA-7",
-     "libelle": "Recours contre un permis ou blocage administratif d'une opération"
+     "id": "MOA-R7",
+     "libelle": "Recours contre un permis ou blocage administratif d'une opération",
+     "mesures": [
+      "MOA-M6"
+     ]
     }
    ]
   },
@@ -703,49 +944,81 @@
     "pro"
    ],
    "reference": "VEFA ; PSLA (CCH L.443-6-2 et suivants) ; OFS (L.329-1 et suivants) ; BRS (L.255-1 et suivants)",
-   "intro": "Programmes neufs, écoulement, dispositifs d'accession sociale, garanties de livraison, organisme de foncier solidaire.",
+   "intro": "Programmes neufs, écoulement et stock, crédit des accédants, dispositifs d'accession sociale, organisme de foncier solidaire et bail réel solidaire.",
    "questions": [
     {
-     "id": "PRO-Q1",
+     "id": "PRO-M1",
      "texte": "Un comité d'engagement valide chaque opération avec un seuil de pré-commercialisation et une marge minimale."
     },
     {
-     "id": "PRO-Q2",
+     "id": "PRO-M2",
      "texte": "Le stock de logements achevés invendus et les délais de vente sont suivis chaque mois."
     },
     {
-     "id": "PRO-Q3",
+     "id": "PRO-M3",
      "texte": "Les contrats de vente en état futur d'achèvement sont contrôlés par le service juridique."
     },
     {
-     "id": "PRO-Q6",
+     "id": "PRO-M4",
      "texte": "L'organisme de foncier solidaire respecte son agrément, sa gouvernance et sa comptabilité distincte."
     },
     {
-     "id": "PRO-Q7",
+     "id": "PRO-M5",
      "texte": "Les plafonds réglementaires du BRS (redevances, plafonds de prix et de ressources, agrément des preneurs) sont respectés et contrôlés."
     }
    ],
    "risques": [
     {
-     "id": "PRO-1",
-     "libelle": "Retournement du marché de l'accession et allongement des délais de vente"
+     "id": "PRO-R1",
+     "libelle": "Retournement du marché de l'accession et allongement des délais de vente",
+     "mesures": [
+      "PRO-M1",
+      "PRO-M2"
+     ]
     },
     {
-     "id": "PRO-2",
-     "libelle": "Stock de logements achevés invendus"
+     "id": "PRO-R2",
+     "libelle": "Stock de logements achevés invendus",
+     "mesures": [
+      "PRO-M2",
+      "PRO-M1"
+     ]
     },
     {
-     "id": "PRO-4",
-     "libelle": "Modification ou suppression d'un dispositif d'aide à l'accession"
+     "id": "PRO-R3",
+     "libelle": "Durcissement de l'octroi de crédit",
+     "mesures": [],
+     "subi": true
     },
     {
-     "id": "PRO-5",
-     "libelle": "Contentieux avec des acquéreurs (retard de livraison, réserves, vices)"
+     "id": "PRO-R4",
+     "libelle": "Modification ou suppression d'un dispositif d'aide à l'accession",
+     "mesures": [],
+     "subi": true
     },
     {
-     "id": "PRO-7",
-     "libelle": "Difficulté de commercialisation ou de revente des logements en BRS"
+     "id": "PRO-R5",
+     "libelle": "Contentieux avec des acquéreurs (retard de livraison, réserves, vices)",
+     "mesures": [
+      "PRO-M3",
+      "MOA-M5"
+     ]
+    },
+    {
+     "id": "PRO-R6",
+     "libelle": "Difficulté de commercialisation ou de revente des logements en BRS",
+     "mesures": [
+      "PRO-M2",
+      "PRO-M5"
+     ]
+    },
+    {
+     "id": "PRO-R7",
+     "libelle": "Non-conformité de l'organisme de foncier solidaire ou des opérations en bail réel solidaire (agrément, plafonds de prix et de ressources, comptabilité distincte)",
+     "mesures": [
+      "PRO-M4",
+      "PRO-M5"
+     ]
     }
    ]
   },
@@ -758,61 +1031,91 @@
     "amc"
    ],
    "reference": "CCH L.231-1 et suivants (contrat de construction de maison individuelle) ; code de l'urbanisme (permis d'aménager, lotissements)",
-   "intro": "Acquisitions et portage fonciers, lotissements et opérations d'aménagement, contrats de construction de maisons individuelles.",
+   "intro": "Acquisitions et portage fonciers, lotissements et opérations d'aménagement, contrats de construction de maisons individuelles, équilibre économique de l'activité.",
    "questions": [
     {
-     "id": "AMC-Q1",
-     "texte": "Les acquisitions foncières sont validées après études de sol, d'urbanisme et analyse des risques de recours."
-    },
-    {
-     "id": "AMC-Q2",
+     "id": "AMC-M1",
      "texte": "Le portage foncier est suivi (durée, coût, garanties)."
     },
     {
-     "id": "AMC-Q3",
+     "id": "AMC-M2",
      "texte": "Les opérations d'aménagement et les lotissements font l'objet de bilans prévisionnels partagés avec la collectivité."
     },
     {
-     "id": "AMC-Q5",
+     "id": "AMC-M3",
      "texte": "Les constructeurs, sous-traitants et artisans sont sélectionnés sur leur solvabilité et leurs assurances, et les réceptions et levées de réserves sont suivies."
     },
     {
-     "id": "AMC-Q6",
-     "texte": "La marge brute et le point mort d'activité sont mis en concordance."
+     "id": "AMC-M4",
+     "texte": "Le point mort de l'activité est recalculé chaque année et le coefficient de marge brute est adapté en conséquence."
     },
     {
-     "id": "AMC-Q7",
-     "texte": "Les travaux sont réalisés dans les délais contractuels et des pénalités de retard sont prévues au contrat."
+     "id": "AMC-M5",
+     "texte": "Les délais de construction sont suivis chantier par chantier et des pénalités de retard sont prévues au contrat."
+    },
+    {
+     "id": "AMC-M6",
+     "texte": "Les contrats de construction de maison individuelle (mentions obligatoires, garantie de livraison à prix et délais convenus, assurance dommages-ouvrage) sont contrôlés avant signature."
     }
    ],
    "risques": [
     {
-     "id": "AMC-1",
-     "libelle": "Recours contre un permis ou blocage administratif d'un lotissement"
+     "id": "AMC-R1",
+     "libelle": "Recours contre un permis ou blocage administratif d'un lotissement",
+     "mesures": [
+      "AMC-M2",
+      "MOA-M6"
+     ]
     },
     {
-     "id": "AMC-2",
-     "libelle": "Pollution des sols ou aléa découvert après acquisition"
+     "id": "AMC-R2",
+     "libelle": "Pollution des sols ou aléa découvert après acquisition",
+     "mesures": [
+      "MOA-M6"
+     ]
     },
     {
-     "id": "AMC-3",
-     "libelle": "Coût et durée excessifs du portage foncier"
+     "id": "AMC-R3",
+     "libelle": "Coût et durée excessifs du portage foncier",
+     "mesures": [
+      "AMC-M1"
+     ]
     },
     {
-     "id": "AMC-4",
-     "libelle": "Non-conformité d'un contrat de construction de maison individuelle (mentions, garanties, délais)"
+     "id": "AMC-R4",
+     "libelle": "Non-conformité d'un contrat de construction de maison individuelle (mentions, garanties, délais)",
+     "mesures": [
+      "AMC-M6",
+      "AMC-M5"
+     ]
     },
     {
-     "id": "AMC-5",
-     "libelle": "Défaillance d'un sous-traitant ou d'un artisan sur un chantier de maison individuelle"
+     "id": "AMC-R5",
+     "libelle": "Défaillance d'un sous-traitant ou d'un artisan sur un chantier de maison individuelle",
+     "mesures": [
+      "AMC-M3"
+     ]
     },
     {
-     "id": "AMC-6",
-     "libelle": "Litige avec un client sur la livraison, les réserves ou les malfaçons"
+     "id": "AMC-R6",
+     "libelle": "Litige avec un client sur la livraison, les réserves ou les malfaçons",
+     "mesures": [
+      "AMC-M3",
+      "AMC-M5"
+     ]
     },
     {
-     "id": "AMC-7",
-     "libelle": "Contrainte de sobriété foncière réduisant les opportunités"
+     "id": "AMC-R7",
+     "libelle": "Contrainte de sobriété foncière réduisant les opportunités",
+     "mesures": [],
+     "subi": true
+    },
+    {
+     "id": "AMC-R8",
+     "libelle": "Dérive du bilan d'une opération d'aménagement ou d'un lotissement (coûts de viabilisation, rythme de vente des lots)",
+     "mesures": [
+      "AMC-M2"
+     ]
     }
    ]
   },
@@ -825,97 +1128,65 @@
     "tra"
    ],
    "reference": "Loi Hoguet du 2 janvier 1970 ; décret no 72-678",
-   "intro": "Agences du réseau : cartes professionnelles, mandats, fonds reçus, information des parties.",
+   "intro": "Agences du réseau : cartes professionnelles, mandats, fonds séquestrés, information des parties, canaux de commercialisation.",
    "questions": [
     {
-     "id": "TRA-Q1",
+     "id": "TRA-M1",
      "texte": "Les cartes professionnelles, la garantie financière et l'assurance de responsabilité sont à jour pour chaque établissement et chaque collaborateur habilité."
     },
     {
-     "id": "TRA-Q2",
+     "id": "TRA-M2",
      "texte": "Les mandats sont écrits, numérotés et inscrits au registre, et les honoraires sont conformes et affichés."
     },
     {
-     "id": "TRA-Q3",
-     "texte": "Les procédures de lutte contre le blanchiment sont appliquées (identification, vigilance, déclaration à Tracfin)."
-    },
-    {
-     "id": "TRA-Q5",
+     "id": "TRA-M3",
      "texte": "Les informations obligatoires (diagnostics, surface, copropriété) sont contrôlées avant chaque compromis."
+    },
+    {
+     "id": "TRA-M4",
+     "texte": "Les fonds reçus pour le compte des parties (séquestres) sont conservés sur un compte séparé, rapprochés chaque mois et couverts par la garantie financière."
+    },
+    {
+     "id": "TRA-M5",
+     "texte": "La part des contacts et des mandats apportés par les plateformes de commercialisation est suivie et des canaux propres (site, vitrine, recommandation, réseau) sont entretenus."
     }
    ],
    "risques": [
     {
-     "id": "TRA-1",
-     "libelle": "Perte de la carte ou défaut de garantie financière (sanction au titre de la loi Hoguet)"
+     "id": "TRA-R1",
+     "libelle": "Perte de la carte ou défaut de garantie financière (sanction au titre de la loi Hoguet)",
+     "mesures": [
+      "TRA-M1"
+     ]
     },
     {
-     "id": "TRA-2",
-     "libelle": "Manquement à la lutte contre le blanchiment dans les transactions"
+     "id": "TRA-R2",
+     "libelle": "Information erronée donnée à un acquéreur ou à un vendeur (diagnostics, surface) engageant la responsabilité de l'agence",
+     "mesures": [
+      "TRA-M3"
+     ]
     },
     {
-     "id": "TRA-3",
-     "libelle": "Information erronée donnée à un acquéreur ou à un vendeur (diagnostics, surface) engageant la responsabilité de l'agence"
+     "id": "TRA-R3",
+     "libelle": "Détournement ou erreur sur des fonds séquestrés",
+     "mesures": [
+      "TRA-M4",
+      "CYB-M4"
+     ]
     },
     {
-     "id": "TRA-4",
-     "libelle": "Détournement ou erreur sur des fonds séquestrés"
+     "id": "TRA-R4",
+     "libelle": "Pratiques commerciales contestées (honoraires, mandats, démarchage)",
+     "mesures": [
+      "TRA-M2"
+     ]
     },
     {
-     "id": "TRA-5",
-     "libelle": "Pratiques commerciales contestées (honoraires, mandats, démarchage)"
-    }
-   ]
-  },
-  {
-   "code": "MAR",
-   "nom": "Marché et conjoncture immobilière",
-   "court": "Marché",
-   "bloc": "met",
-   "metiers": [
-    "pro",
-    "tra"
-   ],
-   "reference": "Conjoncture, taux, concurrence",
-   "intro": "Volumes et prix, conditions de crédit, concurrence, concentration géographique.",
-   "questions": [
-    {
-     "id": "MAR-Q1",
-     "texte": "Un observatoire des marchés locaux (prix, délais de vente, solvabilité des ménages) est mis en place."
-    },
-    {
-     "id": "MAR-Q2",
-     "texte": "Des scénarios de baisse de volume et de prix sont intégrés aux budgets."
-    },
-    {
-     "id": "MAR-Q4",
-     "texte": "La concurrence (promoteurs, réseaux d'agences, plateformes) est analysée chaque année."
-    },
-    {
-     "id": "MAR-Q5",
-     "texte": "Les évolutions des dispositifs d'aide à l'accession (PSLA, TVA réduite, prêts aidés) sont suivies et intégrées aux plans de financement."
-    }
-   ],
-   "risques": [
-    {
-     "id": "MAR-1",
-     "libelle": "Baisse des volumes de ventes en promotion et en transaction"
-    },
-    {
-     "id": "MAR-2",
-     "libelle": "Durcissement de l'octroi de crédit"
-    },
-    {
-     "id": "MAR-3",
-     "libelle": "Baisse des prix"
-    },
-    {
-     "id": "MAR-4",
-     "libelle": "Arrivée de nouveaux acteurs ou de plateformes"
-    },
-    {
-     "id": "MAR-5",
-     "libelle": "Concentration sur une zone géographique ou un segment"
+     "id": "TRA-R5",
+     "libelle": "Dépendance aux plateformes de commercialisation",
+     "mesures": [
+      "TRA-M5"
+     ]
     }
    ]
   },
@@ -928,45 +1199,65 @@
     "ges"
    ],
    "reference": "Loi Hoguet (carte G) ; loi du 6 juillet 1989",
-   "intro": "Mandats de gestion, comptes mandants, loyers, performance énergétique des logements gérés.",
+   "intro": "Mandats de gestion, comptes mandants, loyers, décence des logements gérés, fidélisation des propriétaires.",
    "questions": [
     {
-     "id": "GES-Q1",
+     "id": "GES-M1",
      "texte": "La carte G, la garantie financière et les comptes mandants séparés sont en place et rapprochés chaque mois."
     },
     {
-     "id": "GES-Q2",
+     "id": "GES-M2",
      "texte": "Les encaissements de loyers et les reversements aux propriétaires sont sécurisés par une double validation."
     },
     {
-     "id": "GES-Q3",
-     "texte": "L'encadrement des loyers, la décence et le DPE des logements gérés sont suivis mandat par mandat."
+     "id": "GES-M3",
+     "texte": "L'encadrement des loyers et la décence des logements gérés sont suivis mandat par mandat."
     },
     {
-     "id": "GES-Q4",
+     "id": "GES-M4",
      "texte": "Les impayés et la vacance sont suivis chaque mois avec des procédures de relance formalisées."
+    },
+    {
+     "id": "GES-M5",
+     "texte": "Le portefeuille de mandats est suivi (entrées, résiliations, motifs) et la satisfaction des propriétaires est mesurée."
     }
    ],
    "risques": [
     {
-     "id": "GES-1",
-     "libelle": "Détournement ou erreur sur les fonds des mandants"
+     "id": "GES-R1",
+     "libelle": "Détournement ou erreur sur les fonds des mandants",
+     "mesures": [
+      "GES-M1",
+      "GES-M2"
+     ]
     },
     {
-     "id": "GES-2",
-     "libelle": "Interdiction de louer des logements énergivores gérés (calendrier de la loi Climat et résilience)"
+     "id": "GES-R2",
+     "libelle": "Interdiction de louer des logements énergivores gérés (calendrier de la loi Climat et résilience)",
+     "mesures": [
+      "RSE-M3"
+     ]
     },
     {
-     "id": "GES-3",
-     "libelle": "Hausse des impayés et des contentieux locatifs"
+     "id": "GES-R3",
+     "libelle": "Hausse des impayés et des contentieux locatifs",
+     "mesures": [
+      "GES-M4"
+     ]
     },
     {
-     "id": "GES-4",
-     "libelle": "Perte de mandats (résiliation, concurrence)"
+     "id": "GES-R4",
+     "libelle": "Perte de mandats (résiliation, concurrence)",
+     "mesures": [
+      "GES-M5"
+     ]
     },
     {
-     "id": "GES-5",
-     "libelle": "Litige sur la décence, l'insalubrité ou les charges"
+     "id": "GES-R5",
+     "libelle": "Litige sur la décence, l'insalubrité ou les charges",
+     "mesures": [
+      "GES-M3"
+     ]
     }
    ]
   },
@@ -979,41 +1270,72 @@
     "syn"
    ],
    "reference": "Loi du 10 juillet 1965 ; décret du 17 mars 1967 ; loi Hoguet",
-   "intro": "Copropriétés gérées : comptes séparés, assemblées générales, travaux, trésorerie et responsabilité du syndic.",
+   "intro": "Copropriétés gérées : assemblées générales, travaux et fonds travaux, impayés de charges, obligations réglementaires, sécurité des immeubles, responsabilité du syndic.",
    "questions": [
     {
-     "id": "SYN-Q2",
+     "id": "SYN-M1",
      "texte": "Les assemblées générales sont convoquées et tenues dans les délais et les procès-verbaux sont diffusés."
     },
     {
-     "id": "SYN-Q3",
+     "id": "SYN-M2",
      "texte": "Les travaux votés, les appels de fonds, le fonds travaux et les impayés de charges sont suivis copropriété par copropriété."
     },
     {
-     "id": "SYN-Q4",
+     "id": "SYN-M3",
      "texte": "Les obligations liées à la rénovation énergétique (DPE collectif, plan pluriannuel de travaux) sont suivies."
+    },
+    {
+     "id": "SYN-M4",
+     "texte": "Les décisions d'assemblée générale sont exécutées dans les délais, le conseil syndical est informé et l'assurance de responsabilité civile professionnelle du syndic est à jour."
+    },
+    {
+     "id": "SYN-M5",
+     "texte": "Le portefeuille de copropriétés est suivi (renouvellements, résiliations, motifs) et la satisfaction des conseils syndicaux est mesurée."
+    },
+    {
+     "id": "SYN-M6",
+     "texte": "L'état technique et la sécurité des immeubles gérés (contrôles périodiques, diagnostics, travaux urgents) sont suivis copropriété par copropriété."
     }
    ],
    "risques": [
     {
-     "id": "SYN-1",
-     "libelle": "Mise en cause de la responsabilité du syndic (faute de gestion, retard)"
+     "id": "SYN-R1",
+     "libelle": "Mise en cause de la responsabilité du syndic (faute de gestion, retard)",
+     "mesures": [
+      "SYN-M1",
+      "SYN-M4"
+     ]
     },
     {
-     "id": "SYN-2",
-     "libelle": "Trésorerie de copropriété défaillante, impayés de charges"
+     "id": "SYN-R2",
+     "libelle": "Trésorerie de copropriété défaillante, impayés de charges",
+     "mesures": [
+      "SYN-M2"
+     ]
     },
     {
-     "id": "SYN-3",
-     "libelle": "Perte de mandats ou contestation d'assemblée générale"
+     "id": "SYN-R3",
+     "libelle": "Perte de mandats ou contestation d'assemblée générale",
+     "mesures": [
+      "SYN-M1",
+      "SYN-M5"
+     ]
     },
     {
-     "id": "SYN-4",
-     "libelle": "Non-respect des obligations réglementaires (plan pluriannuel de travaux, DPE, immatriculation)"
+     "id": "SYN-R4",
+     "libelle": "Non-respect des obligations réglementaires (plan pluriannuel de travaux, DPE, immatriculation)",
+     "mesures": [
+      "SYN-M3",
+      "RSE-M3"
+     ]
     },
     {
-     "id": "SYN-5",
-     "libelle": "Dégradation d'une copropriété gérée ou risque pour la sécurité du bâtiment"
+     "id": "SYN-R5",
+     "libelle": "Dégradation d'une copropriété gérée ou risque pour la sécurité du bâtiment",
+     "mesures": [
+      "SYN-M2",
+      "SYN-M6"
+     ]
     }
    ]
   },
@@ -1026,53 +1348,83 @@
     "log"
    ],
    "reference": "CCH livre IV ; loi ELAN",
-   "intro": "Filiales bailleurs, patrimoine locatif social, gouvernance de groupe.",
+   "intro": "Filiales bailleurs : patrimoine locatif social et rénovation, attributions et loyers, convention d'utilité sociale, impayés et vacance, obligations de regroupement.",
    "questions": [
     {
-     "id": "LOG-Q1",
+     "id": "LOG-M1",
      "texte": "Le plan stratégique de patrimoine et le plan d'entretien pluriannuel sont à jour."
     },
     {
-     "id": "LOG-Q2",
-     "texte": "Les DPE du parc sont connus et une trajectoire de rénovation est financée."
-    },
-    {
-     "id": "LOG-Q3",
+     "id": "LOG-M2",
      "texte": "L'attribution des logements et la fixation des loyers respectent les plafonds et les règles de la commission d'attribution."
     },
     {
-     "id": "LOG-Q4",
+     "id": "LOG-M3",
      "texte": "La convention d'utilité sociale est à jour et suivie."
     },
     {
-     "id": "LOG-Q5",
+     "id": "LOG-M4",
      "texte": "La sécurité des bâtiments (incendie, amiante, ascenseurs, gaz) est contrôlée périodiquement."
+    },
+    {
+     "id": "LOG-M5",
+     "texte": "Les obligations de regroupement de la loi ELAN et la position de la filiale au sein d'un groupe sont analysées et une stratégie est arrêtée par le conseil."
+    },
+    {
+     "id": "LOG-M6",
+     "texte": "Les impayés et la vacance du parc sont suivis chaque mois, avec des procédures de relance et d'accompagnement des locataires."
     }
    ],
    "risques": [
     {
-     "id": "LOG-1",
-     "libelle": "Baisse des ressources locatives (réduction de loyer de solidarité, taxes, évolution des aides)"
+     "id": "LOG-R1",
+     "libelle": "Baisse des ressources locatives (réduction de loyer de solidarité, taxes, évolution des aides)",
+     "mesures": [],
+     "subi": true
     },
     {
-     "id": "LOG-2",
-     "libelle": "Non-conformité aux règles d'attribution ou de fixation des loyers"
+     "id": "LOG-R2",
+     "libelle": "Non-conformité aux règles d'attribution ou de fixation des loyers",
+     "mesures": [
+      "LOG-M2"
+     ]
     },
     {
-     "id": "LOG-3",
-     "libelle": "Sinistre ou incident de sécurité sur le parc (incendie, amiante)"
+     "id": "LOG-R3",
+     "libelle": "Sinistre ou incident de sécurité sur le parc (incendie, amiante)",
+     "mesures": [
+      "LOG-M1",
+      "LOG-M4"
+     ]
     },
     {
-     "id": "LOG-4",
-     "libelle": "Contrainte de regroupement ou de rattachement à un groupe"
+     "id": "LOG-R4",
+     "libelle": "Contrainte de regroupement ou de rattachement à un groupe",
+     "mesures": [
+      "LOG-M5"
+     ]
     },
     {
-     "id": "LOG-5",
-     "libelle": "Interdiction de louer et coût de rénovation du parc énergivore"
+     "id": "LOG-R5",
+     "libelle": "Interdiction de louer les logements énergivores du parc (calendrier de la loi Climat et résilience)",
+     "mesures": [
+      "LOG-M1",
+      "RSE-M2"
+     ]
     },
     {
-     "id": "LOG-6",
-     "libelle": "Hausse des impayés et de la vacance"
+     "id": "LOG-R6",
+     "libelle": "Hausse des impayés et de la vacance",
+     "mesures": [
+      "LOG-M6"
+     ]
+    },
+    {
+     "id": "LOG-R7",
+     "libelle": "Non-respect des engagements de la convention d'utilité sociale",
+     "mesures": [
+      "LOG-M3"
+     ]
     }
    ]
   }
@@ -1100,11 +1452,11 @@
   },
   {
    "titre": "La convention avec l'État et les missions sociales",
-   "texte": "Les missions sociales (aides aux ménages, rénovation, copropriétés fragiles) sont fixées par une convention avec l'État. Une réorientation des missions vers les copropriétés a été annoncée dans la presse spécialisée : le périmètre est à confirmer."
+   "texte": "Les missions sociales (aides aux ménages, rénovation, copropriétés fragiles) sont fixées par une convention avec l'État."
   },
   {
    "titre": "Les professions immobilières",
-   "texte": "La transaction, la gestion locative et le syndic sont soumis à la loi Hoguet : carte professionnelle, garantie financière, comptes séparés, assurance. Le syndic relève en outre du statut de la copropriété."
+   "texte": "La transaction, la gestion locative et le syndic sont soumis à la loi Hoguet : carte professionnelle, garantie financière, assurance de responsabilité, comptes séparés pour les fonds reçus (séquestres, comptes mandants). Le syndic relève en outre de la loi du 10 juillet 1965 : assemblées générales, travaux, fonds travaux, plan pluriannuel de travaux."
   },
   {
    "titre": "Accession sociale, OFS et BRS",
@@ -1112,7 +1464,7 @@
   },
   {
    "titre": "Aménagement et maison individuelle",
-   "texte": "Le contrat de construction de maison individuelle est très encadré : mentions obligatoires, garantie de livraison à prix et délais convenus, assurance dommages-ouvrage. Les lotissements et opérations d'aménagement relèvent du code de l'urbanisme."
+   "texte": "Le contrat de construction de maison individuelle est très encadré : mentions obligatoires, garantie de livraison à prix et délais convenus, assurance dommages-ouvrage. Les lotissements et opérations d'aménagement relèvent du code de l'urbanisme et reposent sur un bilan prévisionnel d'opération."
   },
   {
    "titre": "Le logement social des filiales",
@@ -1144,5 +1496,6 @@
    "titre": "Ma carto des risques (AMRAE et Medef) : échelles de cotation et appétence",
    "url": "https://www.macartodesrisques.fr/page/2-cotation-page"
   }
- ]
+ ],
+ "nomenclature": "Mesures de maîtrise : CODE-M1, CODE-M2... Risques : CODE-R1, CODE-R2... Numérotation continue dans l'ordre d'affichage. Un identifiant supprimé n'est jamais réutilisé ; aucune renumérotation une fois la collecte ouverte. Chaque risque liste ses mesures liées (« mesures », éventuellement d'un autre chapitre) ; « subi » marque un risque externe sans mesure de prévention."
 }

@@ -1,5 +1,6 @@
--- Cartographie des risques Procivis : schéma Supabase
--- À exécuter dans l'éditeur SQL du projet (une seule fois).
+-- Cartographie des risques Procivis : schéma Supabase complet (état du 13 octobre 2026).
+-- À exécuter dans l'éditeur SQL d'un projet neuf. Sur le projet existant, exécuter seulement
+-- supabase/securite.sql (qui ajoute la table parametres et la fonction de lecture protégée).
 
 create table if not exists public.reponses (
   id uuid primary key default gen_random_uuid(),
@@ -12,8 +13,8 @@ create table if not exists public.reponses (
   perimetre text,
   metiers jsonb,
   univers text not null,
-  maitrise jsonb not null default '{}'::jsonb,   -- réponses par question ; la clé _ajouts porte les questions ajoutées par le participant (liste {id, texte, v})
-  cotation jsonb not null default '{}'::jsonb,
+  maitrise jsonb not null default '{}'::jsonb,   -- réponses par mesure (CODE-M1...) ; la clé _ajouts porte les questions ajoutées par le participant (liste {id, texte, v})
+  cotation jsonb not null default '{}'::jsonb,   -- cotations par risque (CODE-R1...) : {p, i, t}
   remarques text,                                -- plus alimenté depuis le référentiel v4 (13 octobre 2026)
   version_ref text,
   -- garde-fous simples contre les charges aberrantes
@@ -28,20 +29,47 @@ create index if not exists reponses_session_participant_idx on public.reponses (
 
 alter table public.reponses enable row level security;
 
--- La clé publique « anon » peut ajouter une réponse et lire les réponses, rien d'autre
--- (ni modification ni suppression : l'agrégation retient la dernière réponse par participant et univers).
+-- La clé publique « anon » peut ajouter une réponse, rien d'autre : ni lecture directe, ni modification,
+-- ni suppression (l'agrégation retient la dernière réponse par participant et univers).
 drop policy if exists "insertion publique" on public.reponses;
 create policy "insertion publique" on public.reponses
   for insert to anon with check (true);
-
 drop policy if exists "lecture publique" on public.reponses;
-create policy "lecture publique" on public.reponses
-  for select to anon using (true);
 
--- Vue de confort pour l'export : une ligne par participant et univers (dernière version)
+-- Vue de confort pour l'export depuis le tableau de bord Supabase : une ligne par participant et univers
 create or replace view public.reponses_dernieres as
 select distinct on (session, participant_id, univers) *
 from public.reponses
 order by session, participant_id, univers, created_at desc;
+revoke select on public.reponses_dernieres from anon;
 
-grant select on public.reponses_dernieres to anon;
+-- Lecture protégée par clé : table parametres + fonction lire_reponses
+create table if not exists public.parametres (
+  nom text primary key,
+  valeur text not null
+);
+alter table public.parametres enable row level security;
+revoke all on public.parametres from anon, authenticated;
+insert into public.parametres (nom, valeur) values ('cle_resultats', 'REMPLACER-PAR-LA-CLE-CHOISIE')
+  on conflict (nom) do nothing;
+
+create or replace function public.lire_reponses(p_session text, p_cle text)
+returns setof public.reponses
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_cle is null or p_cle = ''
+     or not exists (select 1 from public.parametres where nom = 'cle_resultats' and valeur = p_cle) then
+    perform pg_sleep(0.5);
+    raise exception 'cle_invalide' using errcode = 'P0001';
+  end if;
+  return query
+    select * from public.reponses
+    where session = p_session
+    order by created_at asc;
+end;
+$$;
+revoke all on function public.lire_reponses(text, text) from public;
+grant execute on function public.lire_reponses(text, text) to anon;

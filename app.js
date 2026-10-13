@@ -78,6 +78,31 @@
     return { fait, tot, q, r, etat: fait === 0 ? "afaire" : fait < tot ? "encours" : "termine" };
   }
 
+  /* ---------- Liens entre mesures et risques (référentiel v5) ----------
+     Chaque risque porte « mesures » (identifiants, parfois d'un autre chapitre) ; les risques couverts
+     par une mesure s'en déduisent. « subi » marque un risque externe sans mesure de prévention. */
+  function indexer(ref) {
+    S.items = {}; S.parMesure = {};
+    ref.univers.forEach(u => {
+      u.questions.forEach(q => { S.items[q.id] = { u, it: q, type: "m" }; });
+      u.risques.forEach(r => {
+        S.items[r.id] = { u, it: r, type: "r" };
+        (r.mesures || []).forEach(id => (S.parMesure[id] = S.parMesure[id] || []).push(r.id));
+      });
+    });
+  }
+  const libItem = id => { const x = S.items[id]; return x ? fr(x.it.texte || x.it.libelle) : ""; };
+  const chipsLiens = (ids, code) => ids.map(id => {
+    const x = S.items[id], ailleurs = x && x.u.code !== code;
+    return `<span class="lien${ailleurs ? " ailleurs" : ""}" title="${esc(libItem(id))}">${esc(id)}${ailleurs ? ` <small>(${t(x.u.court)})</small>` : ""}</span>`;
+  }).join(" ");
+  const liensMesure = (id, code) => { const rs = S.parMesure[id] || []; return `<div class="liens">${rs.length ? "Risques couverts : " + chipsLiens(rs, code) : '<span class="orphelin">Aucun risque lié</span>'}</div>`; };
+  const liensRisque = (r, code) => {
+    const ms = r.mesures || [];
+    const subi = r.subi ? '<span class="chip subi" title="Événement extérieur : pas de mesure de prévention, il se surveille et s\'accepte ou se réduit par un plan d\'action">Risque subi</span>' : "";
+    return `<div class="liens">${subi}${ms.length ? "Mesures : " + chipsLiens(ms, code) : (r.subi ? "" : '<span class="orphelin">Aucune mesure de maîtrise liée</span>')}</div>`;
+  };
+
   /* ---------- Routage ---------- */
   function route() {
     const h = location.hash.replace(/^#\/?/, "");
@@ -218,11 +243,12 @@
     return `<span class="badge ${n.k}">Criticité ${v} · ${n.l}</span>`;
   }
 
-  function blocMaitrise(id, html, val, act, ajoutee) {
+  function blocMaitrise(id, html, val, act, ajoutee, code) {
     const E = S.ref.echelles;
     return `
           <div class="q${ajoutee ? " ajoutee" : ""}" data-q="${esc(id)}">
-            <p>${html}${ajoutee ? ' <span class="chip accent">Question ajoutée</span>' : ""}</p>
+            <div class="lib"><span class="code">${esc(id)}</span><p>${html}${ajoutee ? ' <span class="chip accent">Question ajoutée</span>' : ""}</p></div>
+            ${ajoutee ? "" : liensMesure(id, code)}
             <div class="pills" role="group" aria-label="${esc(id)}">
               ${E.maitrise.map(a => `<button type="button" class="pill${isNaN(Number(a.v)) ? " na" : ""}${val !== undefined && val !== null && String(val) === String(a.v) ? " on" : ""}" data-act="${act}" data-q="${esc(id)}" data-v="${a.v}">${t(a.l)}</button>`).join("")}
             </div>${ajoutee ? `<div class="ajout-actions"><button type="button" class="btn lien" data-act="ajout-retirer" data-id="${esc(id)}">Retirer cette question</button></div>` : ""}
@@ -243,18 +269,12 @@
         <p>${t(u.intro)}</p>
         <div class="ref">Références : ${t(u.reference)}</div>
         <details class="cadre"><summary>Comment coter ?</summary>
-          <p class="small" style="margin-top:8px"><strong>Maîtrise</strong> : répondez pour chaque mesure selon ce qui existe réellement aujourd'hui. <strong>Probabilité</strong> et <strong>impact</strong> se cotent de 1 à 4 en tenant compte des mesures déjà en place. La criticité est le produit des deux. Pour chaque risque, indiquez votre décision : l'<strong>accepter</strong> à son niveau actuel, ou le <strong>réduire</strong> par un plan d'action. Cette décision ne change pas la note. <a href="#/aide">Voir le cadre de référence</a>.</p>
+          <p class="small" style="margin-top:8px"><strong>Maîtrise</strong> : répondez pour chaque mesure selon ce qui existe réellement aujourd'hui. <strong>Probabilité</strong> et <strong>impact</strong> se cotent de 1 à 4 en tenant compte des mesures déjà en place. La criticité est le produit des deux. Pour chaque risque, indiquez votre décision : l'<strong>accepter</strong> à son niveau actuel, ou le <strong>réduire</strong> par un plan d'action. Cette décision ne change pas la note. Sous chaque mesure figurent les risques qu'elle couvre, sous chaque risque les mesures liées ; un <strong>risque subi</strong> est un événement extérieur sans mesure de prévention. ${E.impact_note ? t(E.impact_note) + " " : ""}<a href="#/aide">Voir le cadre de référence</a>.</p>
         </details>
       </div>
       <div class="panel">
         <div class="section-titre"><span class="num">1</span><h2>Maîtrise des risques</h2></div>
-        ${u.questions.map(q => blocMaitrise(q.id, t(txtQ(q)), m.maitrise[q.id], "maitrise", false)).join("")}
-        ${m.ajouts.map(a => blocMaitrise(a.id, esc(a.texte), a.v, "ajout-v", true)).join("")}
-        ${m.ajouts.length < MAX_AJOUTS ? `
-        <form class="q libre" id="f-ajout" autocomplete="off">
-          <label for="ajout-texte"><strong>Ajouter une question</strong> <span class="muted">Une mesure de maîtrise manque dans ce chapitre ? Formulez-la : elle s'ajoute à la liste et se cote comme les autres.</span></label>
-          <div class="ajout-ligne"><input type="text" id="ajout-texte" maxlength="300" placeholder="Ex. Un comité d'audit se réunit chaque trimestre."><button class="btn" type="submit">Ajouter</button></div>
-        </form>` : `<p class="small muted">Nombre maximal de questions ajoutées atteint pour ce chapitre (${MAX_AJOUTS}).</p>`}
+        ${u.questions.map(q => blocMaitrise(q.id, t(txtQ(q)), m.maitrise[q.id], "maitrise", false, u.code)).join("")}
       </div>
       <div class="panel">
         <div class="section-titre"><span class="num">2</span><h2>Cotation des risques</h2></div>
@@ -263,6 +283,7 @@
           return `
           <div class="risque" data-r="${r.id}">
             <div class="lib"><span class="code">${r.id}</span><b>${t(r.libelle)}</b></div>
+            ${liensRisque(r, u.code)}
             <div class="rate"><span class="lab">Probabilité</span><div class="scale" role="group" aria-label="Probabilité">
               ${[1, 2, 3, 4].map(n => `<button type="button" class="pill${c.p === n ? " on" : ""}" data-act="p" data-r="${r.id}" data-v="${n}" aria-label="Probabilité ${n}, ${nomProba[n]}" title="${t(E.probabilite[n].def)}">${n}<small>${nomProba[n]}</small></button>`).join("")}
             </div></div>
@@ -277,6 +298,16 @@
             </div>
           </div>`;
         }).join("")}
+        <div class="ajout-zone">
+          <h3>Ajouter une question</h3>
+          <p class="small muted">Une mesure de maîtrise manque dans ce chapitre ? Formulez-la : elle s'ajoute à la liste et se cote comme les autres (${MAX_AJOUTS} au plus par chapitre).</p>
+          ${m.ajouts.map(a => blocMaitrise(a.id, esc(a.texte), a.v, "ajout-v", true, u.code)).join("")}
+          ${m.ajouts.length < MAX_AJOUTS ? `
+          <form class="q libre" id="f-ajout" autocomplete="off">
+            <label for="ajout-texte" class="small muted">Votre question</label>
+            <div class="ajout-ligne"><input type="text" id="ajout-texte" maxlength="300" placeholder="Ex. Un comité d'audit se réunit chaque trimestre."><button class="btn" type="submit">Ajouter</button></div>
+          </form>` : `<p class="small muted">Nombre maximal de questions ajoutées atteint pour ce chapitre (${MAX_AJOUTS}).</p>`}
+        </div>
       </div>
       <div class="actions">
         ${prec ? `<a class="btn" href="#/u/${prec.code}">← ${t(prec.court)}</a>` : ""}
@@ -359,6 +390,12 @@
         <table class="echelle"><tr><th>Note</th><th>Niveau</th><th>Financier</th><th>Juridique</th><th>Image</th></tr>
           ${[1, 2, 3, 4].map(n => `<tr><td><strong>${n}</strong></td><td>${t(E.impact[n].nom)}</td><td>${t(E.impact[n].financier)}</td><td>${t(E.impact[n].juridique)}</td><td>${t(E.impact[n].image)}</td></tr>`).join("")}
         </table>
+        ${E.impact_note ? `<p class="small muted" style="margin-top:8px">${t(E.impact_note)}</p>` : ""}
+      </div>
+      <div class="panel">
+        <h2>Repères de lecture</h2>
+        <p>Chaque mesure de maîtrise porte un identifiant <strong>CODE-M</strong> et chaque risque un identifiant <strong>CODE-R</strong>, numérotés dans l'ordre d'affichage du chapitre. Sous chaque mesure figurent les risques qu'elle couvre, sous chaque risque les mesures qui le réduisent, parfois dans un autre chapitre. Un risque marqué <span class="chip subi">Risque subi</span> est un événement extérieur sans mesure de prévention : il se surveille, et il s'accepte ou se réduit par un plan d'action.</p>
+        <p>La question ajoutée au bas d'un chapitre est une mesure de maîtrise à part entière : elle se cote comme les autres et ressort dans les résultats, hors de la moyenne du chapitre.</p>
       </div>
       <div class="panel">
         <h2>Criticité et appétence</h2>
@@ -374,10 +411,14 @@
   }
 
   /* ---------- Résultats (animateur) ---------- */
+  /* La clé d'accès n'est plus dans le code : elle est vérifiée côté base par la fonction lire_reponses
+     (supabase/securite.sql). La page la demande une fois par session de navigation. */
+  const cleStockee = () => { try { return sessionStorage.getItem("carto.cle") || ""; } catch (e) { return ""; } };
+  const stockerCle = c => { try { if (c) sessionStorage.setItem("carto.cle", c); else sessionStorage.removeItem("carto.cle"); } catch (e) { /* stockage indisponible */ } };
   function accesResultats() {
-    if (!CFG.resultatsCle) return true;
-    const c = PARAMS.get("cle"); if (c === CFG.resultatsCle) { try { sessionStorage.setItem("carto.cle", c); } catch (e) {} return true; }
-    try { return sessionStorage.getItem("carto.cle") === CFG.resultatsCle; } catch (e) { return false; }
+    if (!S.store.isRemote) return true;
+    const c = PARAMS.get("cle"); if (c) { stockerCle(c); return true; }
+    return !!cleStockee();
   }
 
   function dedupe(rows) {
@@ -391,11 +432,14 @@
     S.res.chargement = true; S.res.erreur = null;
     let change = true;
     try {
-      const rows = dedupe(await S.store.listReponses(SESSION));
+      const rows = dedupe(await S.store.listReponses(SESSION, cleStockee()));
       const emp = rows.length + "|" + rows.reduce((m, r) => (r.created_at || "") > m ? r.created_at : m, "");
       change = emp !== S.res.empreinte || !!S.res.erreur; S.res.empreinte = emp;
       S.res.rows = rows; S.res.maj = new Date();
-    } catch (e) { S.res.erreur = e.message || String(e); }
+    } catch (e) {
+      if (e && e.code === "cle") { S.res.chargement = false; stockerCle(""); S.res.rows = []; S.res.empreinte = null; if (route().name === "resultats") { render(); toast("Clé d'accès incorrecte."); } return; }
+      S.res.erreur = e.message || String(e);
+    }
     S.res.chargement = false;
     if (route().name !== "resultats") return;
     if (change || !app.querySelector(".kpis, .vide")) dessinerResultats();
@@ -500,6 +544,7 @@
       <div class="rhead"><div class="nav"><a class="btn lien" href="#/">← Accueil</a><span class="small muted" id="res-maj">${libMaj()}</span></div>
         <h1>Résultats de la cartographie</h1><p class="muted">${t(CFG.sessionLabel || "")}</p></div>
       ${S.store.isRemote ? "" : '<div class="bandeau">Mode local : seules les réponses saisies sur cet appareil sont affichées. Branchez Supabase dans config.js pour la collecte partagée.</div>'}
+      ${S.store.isRemote && S.store.protege === false ? '<div class="bandeau">Lecture non protégée : la fonction d\'accès n\'est pas encore installée dans Supabase (exécuter supabase/securite.sql). En attendant, toute personne ayant le lien peut lire les réponses.</div>' : ""}
       ${S.res.erreur ? `<div class="bandeau erreur">Lecture impossible : ${esc(S.res.erreur)}</div>` : ""}
       <div class="panel"><div class="filtres">
         <div><label for="fl-societe">Société</label><select id="fl-societe" data-filtre="societe"><option value="">Toutes</option>${opts(uniq("societe"), f.societe)}</select></div>
@@ -592,17 +637,17 @@
   }
   function exportRisques() {
     const A = agreger(filtrer(S.res.rows)), seuil = S.res.seuil;
-    const out = [["Risque", "Univers", "Libellé", "Cotations", "Probabilité moyenne", "Impact moyen", "Criticité moyenne", "Niveau", "Écart-type", "Criticité min", "Criticité max", "Part Réduire", "Au-delà du seuil " + seuil]];
-    A.risques.forEach(r => out.push([r.r.id, r.u.code, fr(r.r.libelle), r.n, fmt1(r.mp), fmt1(r.mi), fmt1(r.mc), r.n ? niveau(Math.round(r.mc)).l : "", fmt1(r.sd), r.min ?? "", r.max ?? "", r.pctRed === null ? "" : Math.round(r.pctRed * 100) + " %", r.n && r.mc > seuil ? "oui" : "non"]));
+    const out = [["Risque", "Univers", "Libellé", "Mesures liées", "Risque subi", "Cotations", "Probabilité moyenne", "Impact moyen", "Criticité moyenne", "Niveau", "Écart-type", "Criticité min", "Criticité max", "Part Réduire", "Au-delà du seuil " + seuil]];
+    A.risques.forEach(r => out.push([r.r.id, r.u.code, fr(r.r.libelle), (r.r.mesures || []).join(", "), r.r.subi ? "oui" : "", r.n, fmt1(r.mp), fmt1(r.mi), fmt1(r.mc), r.n ? niveau(Math.round(r.mc)).l : "", fmt1(r.sd), r.min ?? "", r.max ?? "", r.pctRed === null ? "" : Math.round(r.pctRed * 100) + " %", r.n && r.mc > seuil ? "oui" : "non"]));
     telechargerCSV("carto-synthese-risques-" + horodatage() + ".csv", out);
   }
   function exportMaitrise() {
     const A = agreger(filtrer(S.res.rows));
-    const out = [["Univers", "Question", "Texte", "Réponses notées", "Moyenne (0 à 3)", "Maîtrise", "Non", "En partie", "Formalisé", "Formalisé et contrôlé", "Je ne sais pas", "Non concerné"]];
+    const out = [["Univers", "Mesure", "Texte", "Risques couverts", "Réponses notées", "Moyenne (0 à 3)", "Maîtrise", "Non", "En partie", "Formalisé", "Formalisé et contrôlé", "Je ne sais pas", "Non concerné"]];
     const autres = {}; filtrer(S.res.rows).forEach(r => Object.entries(r.maitrise || {}).forEach(([k, v]) => { if (k.startsWith("_")) return; if (typeof v !== "number") { autres[k] = autres[k] || { nsp: 0, na: 0 }; if (v in autres[k]) autres[k][v]++; } }));
     A.univers.forEach(u => {
-      u.u.questions.forEach(q => { const vals = u.parQ[q.id] || []; const cnt = v => vals.filter(x => x === v).length; const o = autres[q.id] || { nsp: 0, na: 0 }; out.push([u.u.code, q.id, fr(q.texte), vals.length, fmt1(moy(vals)), vals.length ? pct(moy(vals) / 3) : "", cnt(0), cnt(1), cnt(2), cnt(3), o.nsp, o.na]); });
-      u.questions.forEach(x => out.push([u.u.code, "Question ajoutée" + (x.id ? " " + x.id : ""), fr(x.texte) + " (" + x.qui + ")", "", typeof x.v === "number" ? x.v : "", libMaitrise(x.v), "", "", "", "", "", ""]));
+      u.u.questions.forEach(q => { const vals = u.parQ[q.id] || []; const cnt = v => vals.filter(x => x === v).length; const o = autres[q.id] || { nsp: 0, na: 0 }; out.push([u.u.code, q.id, fr(q.texte), (S.parMesure[q.id] || []).join(", "), vals.length, fmt1(moy(vals)), vals.length ? pct(moy(vals) / 3) : "", cnt(0), cnt(1), cnt(2), cnt(3), o.nsp, o.na]); });
+      u.questions.forEach(x => out.push([u.u.code, "Question ajoutée" + (x.id ? " " + x.id : ""), fr(x.texte) + " (" + x.qui + ")", "", "", typeof x.v === "number" ? x.v : "", libMaitrise(x.v), "", "", "", "", "", ""]));
     });
     telechargerCSV("carto-synthese-maitrise-" + horodatage() + ".csv", out);
   }
@@ -665,7 +710,7 @@
       redessinerSaisie(u); toast("Question ajoutée : répondez-y comme aux autres.");
       const el = app.querySelector(`.q[data-q="${id}"]`); if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
     }
-    if (e.target.id === "f-cle") { e.preventDefault(); const v = e.target.querySelector("#cle").value.trim(); if (v === CFG.resultatsCle) { try { sessionStorage.setItem("carto.cle", v); } catch (x) {} render(); } else toast("Clé incorrecte."); }
+    if (e.target.id === "f-cle") { e.preventDefault(); const v = e.target.querySelector("#cle").value.trim(); if (!v) { toast("Saisissez la clé d'accès."); return; } stockerCle(v); render(); }
   });
   // Infobulles
   app.addEventListener("mouseover", e => { const el = e.target.closest("[data-tip]"); if (!el || !el.dataset.tip) return; tip.textContent = el.dataset.tip; tip.classList.add("on"); });
@@ -677,7 +722,7 @@
   async function init() {
     try {
       const [ref, soc] = await Promise.all([fetch("referentiel.json").then(r => r.json()), fetch("societes.json").then(r => r.json())]);
-      S.ref = ref; S.soc = soc;
+      S.ref = ref; S.soc = soc; indexer(ref);
     } catch (e) {
       app.innerHTML = '<div class="bandeau erreur">Le référentiel n\'a pas pu être chargé. Rechargez la page.</div>'; return;
     }

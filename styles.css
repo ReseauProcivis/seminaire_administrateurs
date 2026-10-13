@@ -237,3 +237,19 @@ table.res tr.hors td:first-child { border-left: 3px solid var(--encre); }
 .newform .note { font-size: .84rem; color: var(--encre-3); margin: 10px 0 0; }
 .rapports .rap-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 table.rap td, table.rap th { padding: 12px 14px; }
+
+/* ---------- Référentiel v5 : identifiants, liens mesures-risques, risques subis, ajout de question ---------- */
+.q .lib { display: flex; gap: 10px; align-items: flex-start; }
+.q .lib .code { flex: none; width: 66px; font-size: .78rem; font-weight: 700; color: var(--vert-fonce); padding-top: 3px; }
+.q .lib p { margin: 0 0 8px; flex: 1; }
+.liens { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; margin: 0 0 10px 76px; font-size: .8rem; color: var(--encre-3); }
+.risque .liens { margin-left: 66px; }
+.lien { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--gris-clair); color: var(--encre-2); font-weight: 600; font-size: .76rem; cursor: help; }
+.lien.ailleurs { background: #fff; border: 1px dashed var(--bordure); }
+.lien small { font-weight: 400; font-size: .72rem; }
+.orphelin { color: #8A1C1C; font-weight: 600; }
+.chip.subi { background: #FDE8E8; color: #8A1C1C; }
+.ajout-zone { margin-top: 18px; padding-top: 14px; border-top: 2px solid var(--gris-clair); }
+.ajout-zone h3 { margin: 0 0 4px; font-size: 1rem; }
+.ajout-zone .q.libre { padding-top: 6px; }
+@media (max-width: 600px) { .liens, .risque .liens { margin-left: 0; } }

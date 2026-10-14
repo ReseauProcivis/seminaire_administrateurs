@@ -37,10 +37,11 @@ p { margin: 0 0 .75rem; }
 .topbar-in { max-width: 760px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
 .topbar img { height: 30px; width: auto; display: block; }
 .topbar .titre { font-weight: 600; font-size: .98rem; flex: 1; }
-.nav-res { font-size: .88rem; font-weight: 600; color: var(--accent-bleu); text-decoration: none; padding: 6px 10px; border-radius: 8px; white-space: nowrap; }
-.nav-res:hover { background: var(--vert-pale); }
-.nav-res.actif { background: var(--vert-pale); color: var(--vert-fonce); }
-.nav-res[hidden] { display: none; }
+/* Onglets Formulaire / Résultats, visibles sur toutes les pages */
+.onglets { max-width: 760px; margin: 0 auto; padding: 0 16px; display: flex; gap: 6px; }
+.onglets a { flex: 1; text-align: center; padding: 8px 12px 10px; font-weight: 600; font-size: .92rem; color: var(--encre-2); text-decoration: none; border-bottom: 3px solid transparent; }
+.onglets a:hover { color: var(--encre); }
+.onglets a.actif { color: var(--vert-fonce); border-bottom-color: var(--vert); }
 .statut { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--encre-3); white-space: nowrap; }
 .statut .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--vert); }
 .statut.off .dot { background: var(--gris-moyen); }

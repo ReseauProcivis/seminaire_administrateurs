@@ -132,8 +132,10 @@
     const r = route();
     app.className = "page" + (r.name === "resultats" || r.name === "accueil" ? " large" : "");
     bottom.innerHTML = "";
-    const nr = document.getElementById("nav-res");
-    if (nr) { nr.hidden = !accesResultats(); nr.classList.toggle("actif", r.name === "resultats"); }
+    // Onglets de l'en-tête : « Formulaire » mène à la liste des univers dès qu'un rapport existe
+    const of = document.getElementById("ong-form"), or = document.getElementById("ong-res");
+    if (of) { of.href = S.participant ? "#/univers" : "#/"; of.classList.toggle("actif", r.name !== "resultats"); }
+    if (or) or.classList.toggle("actif", r.name === "resultats");
     if (r.name !== "resultats" && S.res.timer) { clearInterval(S.res.timer); S.res.timer = null; S.res.actif = false; }
     if (r.name === "accueil") app.innerHTML = vueAccueil();
     else if (r.name === "univers") { if (!S.participant) return go("/"); app.innerHTML = vueUnivers(); }
@@ -503,11 +505,12 @@
 
   function vueResultats() {
     if (!accesResultats()) {
-      app.innerHTML = `<div class="panel" style="max-width:480px;margin:30px auto"><h2>Résultats</h2><p class="small muted">Cet espace est réservé à l'animation. Saisissez la clé d'accès.</p><form id="f-cle"><input type="text" id="cle" placeholder="Clé d'accès" autocomplete="off"><div class="actions"><button class="btn primaire" type="submit">Entrer</button></div></form></div>`;
+      app.innerHTML = `<div class="panel" style="max-width:480px;margin:30px auto"><h2>Résultats</h2><p class="small muted">Les résultats du groupe se compilent en direct ; leur lecture est réservée à l'animation. Saisissez la clé d'accès.</p><form id="f-cle"><input type="text" id="cle" placeholder="Clé d'accès" autocomplete="off"><div class="actions"><button class="btn primaire" type="submit">Entrer</button></div></form></div>`;
       return;
     }
     app.innerHTML = '<div class="vide">Chargement des réponses…</div>';
     S.res.actif = true;
+    S.res.empreinte = null;  // à chaque entrée dans l'onglet, la première lecture redessine même sans nouvelle réponse
     chargerResultats();
     if (!S.res.timer && (Number(CFG.rafraichissement) || 0) > 0) S.res.timer = setInterval(chargerResultats, Number(CFG.rafraichissement) * 1000);
   }

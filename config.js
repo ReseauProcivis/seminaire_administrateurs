@@ -18,6 +18,7 @@ window.CARTO_CONFIG = {
   // (table parametres) et saisie à l'écran par l'animateur, ou passée une fois dans l'adresse (?cle=...).
   // Seuil d'appétence par défaut sur la page de résultats (4, 6 ou 9)
   seuilDefaut: 6,
-  // Délai de rafraîchissement automatique des résultats, en secondes
-  rafraichissement: 20
+  // Délai de rafraîchissement automatique des résultats, en secondes. Les cotations partent en direct
+  // à chaque réponse (14 octobre 2026) : la page de résultats se recompile à ce rythme.
+  rafraichissement: 15
 };

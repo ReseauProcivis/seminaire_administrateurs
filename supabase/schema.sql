@@ -13,8 +13,8 @@ create table if not exists public.reponses (
   perimetre text,
   metiers jsonb,
   univers text not null,
-  maitrise jsonb not null default '{}'::jsonb,   -- réponses par mesure (CODE-M1...) ; la clé _ajouts porte les questions ajoutées par le participant (liste {id, texte, v})
-  cotation jsonb not null default '{}'::jsonb,   -- cotations par risque (CODE-R1...) : {p, i, t}
+  maitrise jsonb not null default '{}'::jsonb,   -- depuis le 14 octobre 2026, seule la clé _ajouts est alimentée : mesures proposées par le participant (liste {id, texte}) ; les mesures de maîtrise ne se cotent plus
+  cotation jsonb not null default '{}'::jsonb,   -- cotations par risque (CODE-R1...) : {p, i, t}. Une ligne par envoi (envoi en direct) : l'agrégation retient la dernière par participant et univers
   remarques text,                                -- plus alimenté depuis le référentiel v4 (13 octobre 2026)
   version_ref text,
   -- garde-fous simples contre les charges aberrantes

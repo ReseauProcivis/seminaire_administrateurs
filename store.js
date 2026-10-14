@@ -1,7 +1,8 @@
 /* Couche de stockage des réponses.
    - LocalStore : tout reste dans le navigateur (tests, démonstration).
    - SupabaseStore : table « reponses » exposée par l'API REST de Supabase.
-   Les deux exposent la même interface : saveReponse(row) et listReponses(session, cle).
+   Les deux exposent la même interface : saveReponse(row, opts) et listReponses(session, cle).
+   opts.keepalive : l'envoi survit à la fermeture de la page (utilisé quand le téléphone passe en veille).
    La lecture passe par la fonction lire_reponses (supabase/securite.sql), qui vérifie la clé
    d'accès côté base : la clé publique du navigateur ne peut plus lire la table directement. */
 
@@ -25,8 +26,8 @@ class SupabaseStore {
     this.rpc = base + "/rpc/lire_reponses";
     this.headers = { "apikey": key, "Authorization": "Bearer " + key, "Content-Type": "application/json" };
   }
-  async saveReponse(row) {
-    const res = await fetch(this.base, { method: "POST", headers: { ...this.headers, "Prefer": "return=minimal" }, body: JSON.stringify(row) });
+  async saveReponse(row, opts) {
+    const res = await fetch(this.base, { method: "POST", headers: { ...this.headers, "Prefer": "return=minimal" }, body: JSON.stringify(row), keepalive: !!(opts && opts.keepalive) });
     if (!res.ok) throw new Error("Supabase " + res.status + " : " + (await res.text()).slice(0, 200));
     return true;
   }

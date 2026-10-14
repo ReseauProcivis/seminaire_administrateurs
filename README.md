@@ -1,6 +1,6 @@
 # Cartographie des risques du réseau Procivis
 
-Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à être hébergée sur GitHub Pages. Les administrateurs flashent un QR code, s'identifient en quelques secondes, évaluent la maîtrise des risques et cotent les risques univers par univers. Une page de résultats agrège les réponses en direct pour l'animation.
+Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à être hébergée sur GitHub Pages. Les administrateurs flashent un QR code, s'identifient en quelques secondes, prennent connaissance des mesures de maîtrise et cotent les risques univers par univers. Chaque cotation part en direct ; une page de résultats compile les réponses au fil de l'eau pour l'animation, dès les premières cotations.
 
 ## Fichiers
 
@@ -15,6 +15,7 @@ Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à �
 | `societes.json` | Listes déroulantes : sociétés du réseau et fonctions |
 | `supabase/schema.sql` | Schéma complet pour un projet Supabase neuf |
 | `supabase/securite.sql` | Protection de la lecture des réponses sur le projet existant (clé d'accès vérifiée côté base) |
+| `supabase/direct.sql` | Facultatif : lecture allégée (dernière ligne par participant et univers) pour l'envoi en direct |
 | `supabase/nettoyage.sql` | Remise à zéro des réponses avant la collecte |
 | `qr.html` | Génération du QR code pour la slide |
 | `.github/workflows/keepalive.yml` | Maintient le projet Supabase gratuit actif |
@@ -23,18 +24,23 @@ Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à �
 
 - `#/` accueil et identification (société, fonction, prénom facultatif, périmètre)
 - `#/univers` liste des univers avec progression et état d'envoi
-- `#/u/GOV` saisie d'un univers : partie 1 « Maîtrise des risques », partie 2 « Cotation des risques » (probabilité, impact, traitement) suivie du champ « Ajouter une question »
+- `#/u/GOV` saisie d'un univers : partie 1 « Maîtrise des risques », descriptive (les mesures se lisent, elles ne se cotent plus depuis le 14 octobre 2026), partie 2 « Cotation des risques » (probabilité, impact, traitement) suivie du champ « Proposer une mesure de maîtrise »
 - `#/aide` échelles de cotation, repères de lecture et cadre juridique
-- `#/resultats` page animateur, protégée par une clé d'accès : filtres, indicateurs, matrice, top 10, divergences, questions ajoutées par les participants (avec leur réponse), exports
+- `#/resultats` page animateur, protégée par une clé d'accès : filtres, indicateurs, exposition par univers, matrice, top 10, divergences, mesures proposées par les participants, exports. Un lien « Résultats » apparaît dans l'en-tête une fois la clé saisie (ou en mode local).
 
-Chaque univers est enregistré séparément : une réponse partielle compte. Les réponses sont aussi conservées sur l'appareil, ce qui permet de reprendre plus tard et de renvoyer automatiquement ce qui n'a pas pu partir.
+## Envoi en direct
+
+Chaque cotation est envoyée trois secondes après la dernière modification, sans attendre le bouton « Enregistrer » (qui reste là pour rassurer et forcer l'envoi). Un changement de page ou la mise en veille du téléphone déclenche l'envoi immédiat. Chaque envoi est une ligne complète de l'univers ; la page de résultats retient la dernière ligne par participant et univers. Un envoi qui échoue est gardé sur l'appareil (une ligne par univers) et repart dès que la connexion revient. La page de résultats se recompile toutes les quinze secondes (`rafraichissement` dans config.js) : elle affiche la synthèse dès la première cotation, même si deux risques seulement sont cotés.
+
+Comme un participant produit plusieurs lignes par univers, `supabase/direct.sql` (facultatif) redéfinit `lire_reponses` pour ne renvoyer que la dernière ligne de chacun : la lecture reste légère quel que soit le nombre d'envois.
 
 ## Référentiel (version 6, 14 octobre 2026)
 
 - **Nomenclature.** Les mesures de maîtrise s'appellent `CODE-M1`, `CODE-M2`... et les risques `CODE-R1`, `CODE-R2`..., numérotés sans trou dans l'ordre d'affichage de chaque chapitre (`CODE` est le code du chapitre, par exemple `GOV`). Un identifiant supprimé n'est jamais réutilisé. Une fois la collecte ouverte, plus aucune renumérotation : les réponses sont enregistrées avec ces identifiants.
 - **Liens.** Chaque risque porte la liste `mesures` des identifiants qui le réduisent, parfois dans un autre chapitre. L'application en déduit, pour chaque mesure, les risques qu'elle couvre, et affiche les deux sous chaque item. Un risque sans mesure et une mesure sans risque sont signalés en rouge à la saisie.
 - **Risques subis.** `"subi": true` marque un événement extérieur sans mesure de prévention (évolution législative, aides, énergie, crédit...). Il s'affiche avec une pastille « Risque subi » et reste coté comme les autres.
-- **Questions ajoutées.** Au bas de la partie 2 de chaque chapitre, un participant peut ajouter jusqu'à cinq questions de maîtrise, cotées comme les autres. Elles voyagent dans le champ `maitrise` sous la clé `_ajouts` (liste `{id, texte, v}`, identifiants `GOV-X1`, `GOV-X2`...), n'entrent pas dans la moyenne du chapitre et ressortent à part dans les résultats et les exports.
+- **Mesures de maîtrise.** Depuis le 14 octobre 2026, les mesures (`CODE-M`) sont affichées en tête de chapitre à titre descriptif, avec les risques qu'elles couvrent, et ne se cotent plus. Le champ `maitrise` de la table n'est plus alimenté, hors la clé `_ajouts`.
+- **Mesures proposées.** Au bas de la partie 2 de chaque chapitre, un participant peut proposer jusqu'à cinq mesures de maîtrise manquantes (texte seul, sans cotation). Elles voyagent dans le champ `maitrise` sous la clé `_ajouts` (liste `{id, texte}`, identifiants `GOV-X1`, `GOV-X2`...) et ressortent telles quelles dans les résultats et l'export des réponses.
 - Le champ `remarques` de la table n'est plus alimenté depuis la version 4.
 
 Pour modifier le référentiel : éditer `referentiel.json`. Chaque univers comporte un `code`, un `nom`, un `court`, un `bloc` (`soc` ou `met`), des `metiers` (vide = toujours proposé), une `reference`, une `intro`, des `questions` (`id`, `texte`, `texte_reseau` facultatif) et des `risques` (`id`, `libelle`, `mesures`, `subi` facultatif). Mettre à jour `version` à chaque évolution ; ne plus renuméroter après l'ouverture de la collecte. La correspondance des identifiants entre la v4 et la v5 est conservée hors du dépôt (dossier `arbitrages-2026-10-13`), celle de la v5 vers la v6 dans `arbitrages-2026-10-14` (seul le chapitre MOA bouge : MOA-R6 fusionné dans MOA-R2, MOA-R7 devenu MOA-R6). La v6 est la dernière renumérotation avant la collecte.
@@ -45,7 +51,7 @@ Pour modifier le référentiel : éditer `referentiel.json`. Chaque univers comp
 2. Dans `config.js`, renseigner `supabaseUrl` (Project URL) et `supabaseAnonKey` (clé « publishable »).
 3. Dans le dépôt GitHub, ajouter les secrets `SUPABASE_URL` et `SUPABASE_ANON_KEY` pour le keep-alive.
 
-Sur le projet déjà en service (créé avec l'ancien schéma), exécuter seulement `supabase/securite.sql`, clé remplacée.
+Sur le projet déjà en service (créé avec l'ancien schéma), exécuter seulement `supabase/securite.sql`, clé remplacée, puis `supabase/direct.sql`.
 
 ## Accès aux résultats et sécurité
 

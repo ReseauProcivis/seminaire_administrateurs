@@ -1,5 +1,7 @@
 /* Cartographie des risques Procivis - application
-   Vanilla JS, sans dépendance. Routage par ancre : #/ accueil, #/univers, #/u/CODE, #/aide, #/resultats */
+   Vanilla JS, sans dépendance. Routage par ancre : #/ accueil, #/univers, #/u/CODE, #/aide, #/resultats
+   Depuis le 14 octobre 2026 : la partie 1 de chaque univers (mesures de maîtrise) est descriptive, seule la
+   partie 2 (cotation des risques) se remplit, et chaque réponse part en direct vers la base partagée. */
 (function () {
   "use strict";
 
@@ -13,7 +15,7 @@
 
   /* ---------- Utilitaires ---------- */
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const fr = s => String(s ?? "").replace(/ ([:;!?»%])/g, " $1").replace(/« /g, "« ");
+  const fr = s => String(s ?? "").replace(/ ([:;!?»%])/g, " $1").replace(/« /g, "« ");
   const t = s => esc(fr(s));
   const uid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : "p-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -21,8 +23,9 @@
   const moy = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
   const ecartType = a => { if (a.length < 2) return 0; const m = moy(a); return Math.sqrt(a.reduce((s, x) => s + (x - m) * (x - m), 0) / a.length); };
   const fmt1 = n => (n === null || n === undefined || isNaN(n)) ? "-" : (Math.round(n * 10) / 10).toLocaleString("fr-FR");
-  const pct = n => (n === null || n === undefined || isNaN(n)) ? "-" : Math.round(n * 100) + " %";
+  const pct = n => (n === null || n === undefined || isNaN(n)) ? "-" : Math.round(n * 100) + " %";
   const fmtDate = iso => { try { return new Date(iso).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } };
+  const heure = ts => { try { return new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }); } catch (e) { return ""; } };
 
   function niveau(c) {
     if (!c) return { k: "none", l: "Non coté" };
@@ -61,22 +64,31 @@
   const parCode = code => S.ref.univers.find(u => u.code === code);
   const MAX_AJOUTS = 5;
   const idAjout = (code, list) => { let n = 1; while (list.some(a => a.id === code + "-X" + n)) n++; return code + "-X" + n; };
+  // Mesures proposées par le participant au bas d'un chapitre (texte seul, sans cotation)
+  const propositions = m => (m && Array.isArray(m.ajouts) ? m.ajouts : []).map(a => ({ id: a.id, texte: String(a.texte || "").trim().slice(0, 300) })).filter(a => a.texte);
   const mesU = code => {
-    const m = (S.mes[code] = S.mes[code] || { maitrise: {}, cotation: {}, ajouts: [], modifie: null, envoye: null });
+    const m = (S.mes[code] = S.mes[code] || { cotation: {}, ajouts: [], modifie: null, envoye: null });
+    if (!m.cotation) m.cotation = {};
     if (!Array.isArray(m.ajouts)) m.ajouts = [];
-    // Ancienne forme (question libre en texte seul) : reprise comme question ajoutée, à coter
+    // Anciennes formes : question libre en texte seul, ou question ajoutée cotée (la cotation n'est plus retenue)
     if (m.question && String(m.question).trim()) { m.ajouts.push({ id: idAjout(code, m.ajouts), texte: String(m.question).trim().slice(0, 300) }); delete m.question; }
+    m.ajouts = m.ajouts.map(a => ({ id: a.id, texte: a.texte }));
+    delete m.maitrise;
     return m;
   };
 
+  // Seule la partie 2 (cotation des risques) se remplit : un risque compte quand probabilité et impact sont donnés
   function progression(u) {
-    const m = S.mes[u.code] || { maitrise: {}, cotation: {}, ajouts: [] };
-    const aj = Array.isArray(m.ajouts) ? m.ajouts : [];
-    const q = u.questions.filter(x => m.maitrise[x.id] !== undefined).length + aj.filter(a => a.v !== undefined && a.v !== null).length;
-    const r = u.risques.filter(x => m.cotation[x.id] && m.cotation[x.id].p && m.cotation[x.id].i).length;
-    const tot = u.questions.length + aj.length + u.risques.length, fait = q + r;
-    return { fait, tot, q, r, etat: fait === 0 ? "afaire" : fait < tot ? "encours" : "termine" };
+    const m = S.mes[u.code] || {}, cot = m.cotation || {};
+    const r = u.risques.filter(x => cot[x.id] && cot[x.id].p && cot[x.id].i).length;
+    const tot = u.risques.length;
+    return { fait: r, tot, etat: r === 0 ? "afaire" : r < tot ? "encours" : "termine" };
   }
+  const criticitesLocales = act => {
+    const out = [];
+    act.forEach(u => { const m = S.mes[u.code]; if (!m || !m.cotation) return; u.risques.forEach(r => { const c = m.cotation[r.id]; if (c && c.p && c.i) out.push(c.p * c.i); }); });
+    return out;
+  };
 
   /* ---------- Liens entre mesures et risques (référentiel v5) ----------
      Chaque risque porte « mesures » (identifiants, parfois d'un autre chapitre) ; les risques couverts
@@ -116,9 +128,12 @@
 
   /* ---------- Rendu ---------- */
   function render() {
+    envoyerSansAttendre();
     const r = route();
     app.className = "page" + (r.name === "resultats" || r.name === "accueil" ? " large" : "");
     bottom.innerHTML = "";
+    const nr = document.getElementById("nav-res");
+    if (nr) { nr.hidden = !accesResultats(); nr.classList.toggle("actif", r.name === "resultats"); }
     if (r.name !== "resultats" && S.res.timer) { clearInterval(S.res.timer); S.res.timer = null; S.res.actif = false; }
     if (r.name === "accueil") app.innerHTML = vueAccueil();
     else if (r.name === "univers") { if (!S.participant) return go("/"); app.innerHTML = vueUnivers(); }
@@ -141,11 +156,11 @@
     const mets = cur.metiers && cur.metiers.length ? cur.metiers : metiers.map(m => m.id);
     const intro = `
       <div class="intro-txt">
-        <p class="lead">Un autodiagnostic pour le séminaire des administrateurs : il couvre tous les métiers du réseau Procivis et les règles propres au statut de SACICAP. Il mesure la maîtrise de chaque univers, cote les risques et les compare à l'appétence au risque choisie par le groupe.</p>
+        <p class="lead">Un autodiagnostic pour le séminaire des administrateurs : il couvre tous les métiers du réseau Procivis et les règles propres au statut de SACICAP. Pour chaque univers, il rappelle les mesures de maîtrise attendues, cote les risques et les compare à l'appétence au risque choisie par le groupe.</p>
         <div class="etapes">
           <div class="etape"><b>1</b><p><strong>Choisir le périmètre.</strong> « Réseau » pour la vision d'ensemble du séminaire. « SACICAP » pour décliner ensuite société par société, avec les seuls métiers exercés.</p></div>
-          <div class="etape"><b>2</b><p><strong>Évaluer et coter.</strong> Maîtrise de chaque univers, puis probabilité et impact de 1 à 4 pour chaque risque, en tenant compte des mesures déjà en place. Décidez pour chacun : accepter ou réduire.</p></div>
-          <div class="etape"><b>3</b><p><strong>Lire la synthèse.</strong> Maîtrise et exposition par univers, matrice des risques, risques hors appétence, export CSV. L'onglet <a href="#/aide">« Cadre de référence »</a> rappelle les textes et les échelles.</p></div>
+          <div class="etape"><b>2</b><p><strong>Coter.</strong> Pour chaque univers, prenez connaissance des mesures de maîtrise, puis cotez chaque risque : probabilité et impact de 1 à 4, en tenant compte de ce qui existe déjà. Décidez pour chacun : accepter ou réduire.</p></div>
+          <div class="etape"><b>3</b><p><strong>Lire la synthèse.</strong> Les réponses sont compilées en direct, dès les premières cotations : exposition par univers, matrice des risques, risques hors appétence, export CSV. L'onglet <a href="#/aide">« Cadre de référence »</a> rappelle les textes et les échelles.</p></div>
         </div>
         <div class="famlist">${metiers.map(m => `<span class="chip accent">${t(m.nom)}</span>`).join("")}</div>
       </div>`;
@@ -167,22 +182,21 @@
             ${metiers.map(m => `<label for="f-m-${m.id}"><input type="checkbox" name="met" id="f-m-${m.id}" value="${m.id}"${mets.includes(m.id) ? " checked" : ""}>${t(m.nom)}</label>`).join("")}
           </fieldset>
           <button class="btn primaire" type="submit">${p ? "Mettre à jour le rapport" : "Créer le rapport"}</button>
-          <p class="note">${S.store.isRemote ? "Le rapport est enregistré au fil de la saisie et visible par les personnes ayant accès à cet outil." : "Aperçu local : le rapport ne sera pas conservé après fermeture."}</p>
+          <p class="note">${S.store.isRemote ? "Chaque cotation est enregistrée en direct et compilée dans les résultats du séminaire." : "Aperçu local : le rapport ne sera pas conservé après fermeture."}</p>
         </form>
       </div>`;
     let rapports = `<section class="rapports"><div class="rap-head"><h2>Rapports</h2><span class="muted">${p ? "1 rapport" : "0 rapport"}</span></div>`;
     if (!p) {
-      rapports += `<div class="panel"><p><strong>Aucun rapport pour l'instant.</strong></p><p class="muted">Créez le premier avec le formulaire « Nouveau rapport » : il apparaîtra ici avec sa progression et son niveau de maîtrise.</p></div>`;
+      rapports += `<div class="panel"><p><strong>Aucun rapport pour l'instant.</strong></p><p class="muted">Créez le premier avec le formulaire « Nouveau rapport » : il apparaîtra ici avec sa progression et sa criticité moyenne.</p></div>`;
     } else {
       const act = universActifs(p);
       const tot = act.reduce((x, u) => x + progression(u).tot, 0), fait = act.reduce((x, u) => x + progression(u).fait, 0);
-      const vals = []; act.forEach(u => { const m = S.mes[u.code]; if (m) Object.values(m.maitrise).forEach(v => { if (typeof v === "number") vals.push(v); }); });
-      const mat = vals.length ? moy(vals) / 3 : null;
+      const crit = moy(criticitesLocales(act));
       const maj = Math.max(0, ...act.map(u => (S.mes[u.code] || {}).modifie || 0));
-      rapports += `<div class="panel" style="padding:0;overflow-x:auto"><table class="res rap"><thead><tr><th>Structure</th><th>Intitulé</th><th>Périmètre</th><th>Mis à jour</th><th>Progression</th><th class="num">Maîtrise</th><th></th></tr></thead><tbody>
+      rapports += `<div class="panel" style="padding:0;overflow-x:auto"><table class="res rap"><thead><tr><th>Structure</th><th>Intitulé</th><th>Périmètre</th><th>Mis à jour</th><th>Progression</th><th class="num">Criticité moyenne</th><th></th></tr></thead><tbody>
         <tr><td><a class="btn lien" href="#/univers">${esc(p.societe)}</a></td><td>${esc(p.prenom || p.fonction)}</td><td><span class="chip">${p.perimetre === "sacicap" ? "SACICAP" : "Réseau"}</span></td><td class="muted">${maj ? fmtDate(maj) : "-"}</td>
-        <td><div style="display:flex;gap:8px;align-items:center;min-width:140px"><div class="progress" style="flex:1"><span style="width:${tot ? Math.round(fait / tot * 100) : 0}%"></span></div><span class="num">${tot ? Math.round(fait / tot * 100) : 0} %</span></div></td>
-        <td class="num">${pct(mat)}</td><td><a class="btn" href="#/univers">Ouvrir</a></td></tr></tbody></table></div>`;
+        <td><div style="display:flex;gap:8px;align-items:center;min-width:140px"><div class="progress" style="flex:1"><span style="width:${tot ? Math.round(fait / tot * 100) : 0}%"></span></div><span class="num">${tot ? Math.round(fait / tot * 100) : 0} %</span></div></td>
+        <td class="num">${crit === null ? "-" : fmt1(crit) + " / 16"}</td><td><a class="btn" href="#/univers">Ouvrir</a></td></tr></tbody></table></div>`;
     }
     rapports += "</section>";
     return `
@@ -200,10 +214,16 @@
     if (!societe || !fonction) { toast("Indiquez votre société et votre fonction."); return; }
     if (perimetre === "sacicap" && !metiers.length) { toast("Cochez au moins un métier exercé."); return; }
     S.participant = { id: (S.participant && S.participant.id) || uid(), societe, fonction, prenom, perimetre, metiers };
-    S.editionProfil = false; persist(); go("/univers");
+    persist(); go("/univers");
   }
 
   /* ---------- Liste des univers ---------- */
+  function chipEnvoi(code) {
+    const m = S.mes[code]; if (!m || !m.modifie) return "";
+    if (S.file.some(r => r.univers === code)) return '<span class="chip encours">Envoi en attente</span>';
+    if (!m.envoye || m.modifie > m.envoye) return '<span class="chip">Envoi en cours</span>';
+    return `<span class="chip sync" title="Envoyé à ${heure(m.envoye)}">Envoyé</span>`;
+  }
   function vueUnivers() {
     const p = S.participant, act = universActifs(p);
     const fin = act.filter(u => progression(u).etat === "termine").length;
@@ -216,22 +236,22 @@
           <a class="btn lien" href="#/" data-act="editer-profil">Modifier</a>
         </div>
         <div style="margin-top:12px" class="progress" aria-label="Progression"><span style="width:${tot ? Math.round(fait / tot * 100) : 0}%"></span></div>
-        <p class="small muted" style="margin:8px 0 0">${fin} univers terminé${fin > 1 ? "s" : ""} sur ${act.length} · ${fait} réponses sur ${tot}${enAttente ? ` · <span class="chip encours">${enAttente} envoi${enAttente > 1 ? "s" : ""} en attente</span>` : ""}</p>
+        <p class="small muted" style="margin:8px 0 0">${fin} univers terminé${fin > 1 ? "s" : ""} sur ${act.length} · ${fait} risque${fait > 1 ? "s" : ""} coté${fait > 1 ? "s" : ""} sur ${tot}${enAttente ? ` · <span class="chip encours">${enAttente} envoi${enAttente > 1 ? "s" : ""} en attente</span>` : ""}</p>
       </div>
       ${S.store.isRemote ? "" : '<div class="bandeau">Mode local : les réponses restent sur cet appareil tant que la base partagée n\'est pas branchée.</div>'}`;
     S.ref.blocs.forEach(b => {
       const us = act.filter(u => u.bloc === b.id); if (!us.length) return;
       h += `<div class="bloc-titre">${t(b.nom)}</div>`;
       us.forEach(u => {
-        const pr = progression(u), m = S.mes[u.code];
+        const pr = progression(u);
         const chip = pr.etat === "termine" ? '<span class="chip ok">Terminé</span>' : pr.etat === "encours" ? `<span class="chip encours">${pr.fait}/${pr.tot}</span>` : '<span class="chip">À faire</span>';
-        const sync = m && m.envoye ? `<span class="chip sync" title="Envoyé le ${fmtDate(m.envoye)}">Envoyé</span>` : (m && m.modifie ? '<span class="chip">Non envoyé</span>' : "");
-        h += `<button class="ucard" data-act="ouvrir" data-code="${u.code}"><span class="code">${u.code}</span><span class="nom">${t(u.court || u.nom)}<span class="meta">${u.questions.length} questions · ${u.risques.length} risques</span></span>${sync}${chip}</button>`;
+        h += `<button class="ucard" data-act="ouvrir" data-code="${u.code}"><span class="code">${u.code}</span><span class="nom">${t(u.court || u.nom)}<span class="meta">${u.questions.length} mesures · ${u.risques.length} risques à coter</span></span>${chipEnvoi(u.code)}${chip}</button>`;
       });
     });
     h += `<p class="small muted" style="margin-top:18px"><a href="#/aide">Cadre de référence : textes et échelles</a></p>`;
     return h;
   }
+  const redessinerUnivers = () => { const y = window.scrollY; app.innerHTML = vueUnivers(); window.scrollTo(0, y); };
 
   /* ---------- Saisie d'un univers ---------- */
   const nomProba = { 1: "Improbable", 2: "Rare", 3: "Occasionnel", 4: "Fréquent" };
@@ -241,18 +261,6 @@
     if (!c || !c.p || !c.i) return '<span class="badge">Criticité : à coter</span>';
     const v = c.p * c.i, n = niveau(v);
     return `<span class="badge ${n.k}">Criticité ${v} · ${n.l}</span>`;
-  }
-
-  function blocMaitrise(id, html, val, act, ajoutee, code) {
-    const E = S.ref.echelles;
-    return `
-          <div class="q${ajoutee ? " ajoutee" : ""}" data-q="${esc(id)}">
-            <div class="lib"><span class="code">${esc(id)}</span><p>${html}${ajoutee ? ' <span class="chip accent">Question ajoutée</span>' : ""}</p></div>
-            ${ajoutee ? "" : liensMesure(id, code)}
-            <div class="pills" role="group" aria-label="${esc(id)}">
-              ${E.maitrise.map(a => `<button type="button" class="pill${isNaN(Number(a.v)) ? " na" : ""}${val !== undefined && val !== null && String(val) === String(a.v) ? " on" : ""}" data-act="${act}" data-q="${esc(id)}" data-v="${a.v}">${t(a.l)}</button>`).join("")}
-            </div>${ajoutee ? `<div class="ajout-actions"><button type="button" class="btn lien" data-act="ajout-retirer" data-id="${esc(id)}">Retirer cette question</button></div>` : ""}
-          </div>`;
   }
 
   function vueSaisie(u) {
@@ -269,12 +277,15 @@
         <p>${t(u.intro)}</p>
         <div class="ref">Références : ${t(u.reference)}</div>
         <details class="cadre"><summary>Comment coter ?</summary>
-          <p class="small" style="margin-top:8px"><strong>Maîtrise</strong> : répondez pour chaque mesure selon ce qui existe réellement aujourd'hui. <strong>Probabilité</strong> et <strong>impact</strong> se cotent de 1 à 4 en tenant compte des mesures déjà en place. La criticité est le produit des deux. Pour chaque risque, indiquez votre décision : l'<strong>accepter</strong> à son niveau actuel, ou le <strong>réduire</strong> par un plan d'action. Cette décision ne change pas la note. Sous chaque mesure figurent les risques qu'elle couvre, sous chaque risque les mesures liées ; un <strong>risque subi</strong> est un événement extérieur sans mesure de prévention. ${E.impact_note ? t(E.impact_note) + " " : ""}<a href="#/aide">Voir le cadre de référence</a>.</p>
+          <p class="small" style="margin-top:8px">La <strong>partie 1</strong> rappelle les mesures de maîtrise attendues dans ce chapitre : elle se lit, elle ne se cote pas. Dans la <strong>partie 2</strong>, la <strong>probabilité</strong> et l'<strong>impact</strong> de chaque risque se cotent de 1 à 4 en tenant compte des mesures réellement en place. La criticité est le produit des deux. Pour chaque risque, indiquez votre décision : l'<strong>accepter</strong> à son niveau actuel, ou le <strong>réduire</strong> par un plan d'action. Cette décision ne change pas la note. Sous chaque mesure figurent les risques qu'elle couvre, sous chaque risque les mesures liées ; un <strong>risque subi</strong> est un événement extérieur sans mesure de prévention. Chaque cotation est envoyée au fil de la saisie. ${E.impact_note ? t(E.impact_note) + " " : ""}<a href="#/aide">Voir le cadre de référence</a>.</p>
         </details>
       </div>
       <div class="panel">
         <div class="section-titre"><span class="num">1</span><h2>Maîtrise des risques</h2></div>
-        ${u.questions.map(q => blocMaitrise(q.id, t(txtQ(q)), m.maitrise[q.id], "maitrise", false, u.code)).join("")}
+        <p class="small muted intro-mesures">Les mesures ci-dessous décrivent le dispositif de maîtrise attendu dans ce chapitre. Elles ne se cotent pas : gardez-les en tête pour coter, en partie 2, chaque risque selon ce qui existe réellement aujourd'hui.</p>
+        <ol class="mesures">
+          ${u.questions.map(q => `<li><span class="code">${esc(q.id)}</span><div class="txt"><p>${t(txtQ(q))}</p>${liensMesure(q.id, u.code)}</div></li>`).join("")}
+        </ol>
       </div>
       <div class="panel">
         <div class="section-titre"><span class="num">2</span><h2>Cotation des risques</h2></div>
@@ -299,14 +310,14 @@
           </div>`;
         }).join("")}
         <div class="ajout-zone">
-          <h3>Ajouter une question</h3>
-          <p class="small muted">Une mesure de maîtrise manque dans ce chapitre ? Formulez-la : elle s'ajoute à la liste et se cote comme les autres (${MAX_AJOUTS} au plus par chapitre).</p>
-          ${m.ajouts.map(a => blocMaitrise(a.id, esc(a.texte), a.v, "ajout-v", true, u.code)).join("")}
+          <h3>Proposer une mesure de maîtrise</h3>
+          <p class="small muted">Une mesure manque dans la liste de la partie 1 ? Formulez-la : elle sera restituée telle quelle dans les résultats (${MAX_AJOUTS} au plus par chapitre).</p>
+          ${m.ajouts.map(a => `<div class="q ajoutee" data-q="${esc(a.id)}"><div class="lib"><span class="code">${esc(a.id)}</span><p>${esc(a.texte)} <span class="chip accent">Mesure proposée</span></p></div><div class="ajout-actions"><button type="button" class="btn lien" data-act="ajout-retirer" data-id="${esc(a.id)}">Retirer</button></div></div>`).join("")}
           ${m.ajouts.length < MAX_AJOUTS ? `
           <form class="q libre" id="f-ajout" autocomplete="off">
-            <label for="ajout-texte" class="small muted">Votre question</label>
+            <label for="ajout-texte" class="small muted">Votre proposition</label>
             <div class="ajout-ligne"><input type="text" id="ajout-texte" maxlength="300" placeholder="Ex. Un comité d'audit se réunit chaque trimestre."><button class="btn" type="submit">Ajouter</button></div>
-          </form>` : `<p class="small muted">Nombre maximal de questions ajoutées atteint pour ce chapitre (${MAX_AJOUTS}).</p>`}
+          </form>` : `<p class="small muted">Nombre maximal de mesures proposées atteint pour ce chapitre (${MAX_AJOUTS}).</p>`}
         </div>
       </div>
       <div class="actions">
@@ -316,50 +327,100 @@
     return h;
   }
 
+  function etatEnvoi(code) {
+    const m = S.mes[code] || {};
+    if (S.file.some(r => r.univers === code)) return "Envoi en attente : il reprendra dès que la connexion revient";
+    if (m.modifie && (!m.envoye || m.modifie > m.envoye)) return S.store.isRemote ? "Envoi en cours…" : "Enregistré sur cet appareil";
+    if (m.envoye) return (S.store.isRemote ? "Envoyé en direct à " : "Enregistré sur cet appareil à ") + heure(m.envoye);
+    return "Rien de renseigné pour l'instant";
+  }
   function barreSaisie(u) {
-    const pr = progression(u), m = S.mes[u.code] || {};
-    const etat = m.envoye && m.modifie && m.modifie > m.envoye ? "Modifié depuis le dernier envoi" : m.envoye ? "Envoyé le " + fmtDate(m.envoye) : m.modifie ? "Enregistré sur l'appareil, pas encore envoyé" : "Rien de renseigné";
+    const pr = progression(u);
     return `<div class="bottombar"><div class="bottombar-in">
-      <div class="info"><strong>${pr.fait} / ${pr.tot}</strong> renseignés<br><span class="muted">${etat}</span></div>
+      <div class="info"><strong>${pr.fait} / ${pr.tot}</strong> risques cotés<br><span class="muted">${etatEnvoi(u.code)}</span></div>
       <button class="btn primaire" data-act="enregistrer" data-code="${u.code}" data-suite="">Enregistrer</button>
     </div></div>`;
   }
   const majBarre = u => { bottom.innerHTML = barreSaisie(u); };
   const redessinerSaisie = u => { const y = window.scrollY; app.innerHTML = vueSaisie(u); majBarre(u); window.scrollTo(0, y); };
 
-  async function enregistrer(code, suite) {
-    const u = parCode(code), m = mesU(code), p = S.participant;
-    const pr = progression(u);
-    const ajouts = (m.ajouts || []).map(a => ({ id: a.id, texte: String(a.texte || "").trim().slice(0, 300), ...(a.v !== undefined && a.v !== null ? { v: a.v } : {}) })).filter(a => a.texte);
-    if (pr.fait === 0 && !ajouts.length) { toast("Rien à enregistrer pour cet univers."); return; }
-    const row = {
+  /* ---------- Envoi en direct ----------
+     Chaque modification déclenche, après un court délai, l'envoi de l'univers complet : la base reçoit une
+     ligne par envoi et la page de résultats retient la dernière par participant et univers. Un envoi qui
+     échoue est mis en file d'attente (une seule ligne par univers) et repart dès que la connexion revient. */
+  const DELAI_ENVOI = 3000;
+  let envoiTimer = null, envoiCode = null;
+
+  function ligne(code) {
+    const m = mesU(code), p = S.participant, aj = propositions(m);
+    return {
       session: SESSION, participant_id: p.id, prenom: p.prenom || null, societe: p.societe, fonction: p.fonction,
       perimetre: p.perimetre, metiers: p.perimetre === "sacicap" ? p.metiers : null, univers: code,
-      // Les questions ajoutées par le participant voyagent dans le jsonb « maitrise » sous la clé _ajouts (liste {id, texte, v}),
-      // ignorée par l'agrégation des notes : elles sont restituées à part dans les résultats et les exports.
-      maitrise: ajouts.length ? { ...m.maitrise, _ajouts: ajouts } : m.maitrise,
+      // Les mesures proposées par le participant voyagent dans le jsonb « maitrise » sous la clé _ajouts (liste {id, texte}).
+      maitrise: aj.length ? { _ajouts: aj } : {},
       cotation: m.cotation, remarques: null, version_ref: S.ref.version
     };
-    setStatut("busy", "Enregistrement");
+  }
+  const empreinte = row => JSON.stringify([row.maitrise, row.cotation, row.prenom, row.societe, row.fonction, row.perimetre, row.metiers]);
+  const aEnvoyer = (u, m) => progression(u).fait > 0 || propositions(m).length > 0 || !!m.envoye;
+
+  async function envoyer(code, opts) {
+    opts = opts || {};
+    const u = parCode(code); if (!u || !S.participant) return false;
+    const m = mesU(code); if (!aEnvoyer(u, m)) return false;
+    if (envoiCode === code) { clearTimeout(envoiTimer); envoiTimer = null; envoiCode = null; }
+    const row = ligne(code), emp = empreinte(row);
+    const enFile = S.file.some(r => r.univers === code);
+    if (emp === m.empreinte && !enFile) return true;  // rien de nouveau depuis le dernier envoi
+    setStatut("busy", "Envoi");
+    let ok = false;
     try {
-      await S.store.saveReponse(row);
-      m.envoye = Date.now(); persist();
+      await S.store.saveReponse(row, { keepalive: !!opts.keepalive });
+      m.envoye = Date.now(); m.empreinte = emp; S.file = S.file.filter(r => r.univers !== code); persist();
       setStatut(S.store.isRemote ? "ok" : "off", S.store.isRemote ? "Enregistré" : "Mode local");
-      toast(S.store.isRemote ? "Univers enregistré, merci." : "Enregistré sur cet appareil.");
+      ok = true;
     } catch (e) {
-      S.file.push(row); persist();
+      S.file = S.file.filter(r => r.univers !== code); S.file.push(row); persist();
       setStatut("err", "Envoi en attente");
-      toast("Enregistré sur l'appareil. L'envoi reprendra dès que la connexion revient.");
     }
+    const r = route();
+    if (r.name === "saisie" && r.code === code) majBarre(u); else if (r.name === "univers") redessinerUnivers();
+    return ok;
+  }
+  function planifierEnvoi(code) {
+    if (envoiTimer && envoiCode !== code) { const autre = envoiCode; clearTimeout(envoiTimer); envoiTimer = null; envoiCode = null; envoyer(autre); }
+    clearTimeout(envoiTimer); envoiCode = code;
+    envoiTimer = setTimeout(() => { envoiTimer = null; envoiCode = null; envoyer(code); }, DELAI_ENVOI);
+  }
+  // Changement de page ou mise en arrière-plan : ce qui attendait part tout de suite
+  function envoyerSansAttendre(opts) {
+    if (!envoiTimer) return;
+    const code = envoiCode; clearTimeout(envoiTimer); envoiTimer = null; envoiCode = null;
+    envoyer(code, opts);
+  }
+
+  async function enregistrer(code, suite) {
+    const u = parCode(code), m = mesU(code);
+    if (!aEnvoyer(u, m)) { toast("Rien à enregistrer pour cet univers : cotez au moins un risque."); return; }
+    const ok = await envoyer(code);
+    if (ok) toast(S.store.isRemote ? "Univers enregistré, merci." : "Enregistré sur cet appareil.");
+    else toast("Enregistré sur l'appareil. L'envoi reprendra dès que la connexion revient.");
     if (suite) go("/u/" + suite); else go("/univers");
   }
 
   async function viderFile() {
     if (!S.file.length || !S.store.isRemote) return;
     const reste = [];
-    for (const row of S.file) { try { await S.store.saveReponse(row); if (S.mes[row.univers]) S.mes[row.univers].envoye = Date.now(); } catch (e) { reste.push(row); } }
+    for (const row of S.file) {
+      try { await S.store.saveReponse(row); const m = S.mes[row.univers]; if (m) { m.envoye = Date.now(); m.empreinte = empreinte(row); } }
+      catch (e) { reste.push(row); }
+    }
     S.file = reste; persist();
-    if (!reste.length) { setStatut("ok", "Enregistré"); if (route().name === "univers") render(); }
+    if (!reste.length) {
+      setStatut("ok", "Enregistré");
+      const r = route();
+      if (r.name === "univers") redessinerUnivers(); else if (r.name === "saisie") { const u = parCode(r.code); if (u) majBarre(u); }
+    }
   }
 
   /* ---------- Aide ---------- */
@@ -369,14 +430,8 @@
       <div class="rhead"><div class="nav"><button class="btn lien" data-act="retour">← Retour</button></div><h1>Cadre de référence</h1></div>
       <div class="panel">
         <h2>Maîtrise des risques</h2>
-        <table class="echelle"><tr><th>Réponse</th><th>Sens</th></tr>
-          <tr><td><strong>Non</strong></td><td>La mesure n'existe pas.</td></tr>
-          <tr><td><strong>En partie</strong></td><td>Elle existe de façon informelle ou incomplète.</td></tr>
-          <tr><td><strong>Oui, formalisé</strong></td><td>Elle est écrite et appliquée.</td></tr>
-          <tr><td><strong>Oui, formalisé et contrôlé</strong></td><td>Elle est écrite, appliquée et son application est vérifiée.</td></tr>
-          <tr><td><strong>Je ne sais pas</strong></td><td>Vous n'avez pas l'information. La réponse est enregistrée mais n'entre pas dans la moyenne.</td></tr>
-          <tr><td><strong>Non concerné</strong></td><td>La mesure ne s'applique pas à la structure évaluée.</td></tr>
-        </table>
+        <p>Chaque univers s'ouvre sur la liste des mesures de maîtrise attendues (<strong>CODE-M1</strong>, <strong>CODE-M2</strong>...). Elles décrivent le dispositif de référence et ne se cotent pas : elles servent de repère pour coter les risques en tenant compte de ce qui existe réellement aujourd'hui. Sous chaque mesure figurent les risques qu'elle couvre.</p>
+        <p>Une mesure qui manque peut être proposée au bas du chapitre : elle est restituée telle quelle dans les résultats.</p>
       </div>
       <div class="panel">
         <h2>Probabilité</h2>
@@ -394,8 +449,8 @@
       </div>
       <div class="panel">
         <h2>Repères de lecture</h2>
-        <p>Chaque mesure de maîtrise porte un identifiant <strong>CODE-M</strong> et chaque risque un identifiant <strong>CODE-R</strong>, numérotés dans l'ordre d'affichage du chapitre. Sous chaque mesure figurent les risques qu'elle couvre, sous chaque risque les mesures qui le réduisent, parfois dans un autre chapitre. Un risque marqué <span class="chip subi">Risque subi</span> est un événement extérieur sans mesure de prévention : il se surveille, et il s'accepte ou se réduit par un plan d'action.</p>
-        <p>La question ajoutée au bas d'un chapitre est une mesure de maîtrise à part entière : elle se cote comme les autres et ressort dans les résultats, hors de la moyenne du chapitre.</p>
+        <p>Chaque risque porte un identifiant <strong>CODE-R</strong>, numéroté dans l'ordre d'affichage du chapitre. Sous chaque risque figurent les mesures qui le réduisent, parfois dans un autre chapitre. Un risque marqué <span class="chip subi">Risque subi</span> est un événement extérieur sans mesure de prévention : il se surveille, et il s'accepte ou se réduit par un plan d'action.</p>
+        <p>Les cotations sont envoyées au fil de la saisie et compilées en direct : la synthèse se construit dès les premières réponses, sans attendre que tout soit rempli.</p>
       </div>
       <div class="panel">
         <h2>Criticité et appétence</h2>
@@ -463,22 +518,16 @@
   }
 
   function agreger(rows) {
-    const U = {}; S.ref.univers.forEach(u => U[u.code] = { u, n: 0, mat: [], parQ: {}, remarques: [], questions: [] });
+    const U = {}; S.ref.univers.forEach(u => U[u.code] = { u, n: 0, propositions: [] });
     const R = {}; S.ref.univers.forEach(u => u.risques.forEach(r => R[r.id] = { r, u, p: [], i: [], c: [], acc: 0, red: 0 }));
     const participants = new Set(), societes = new Set();
     rows.forEach(row => {
       const cu = U[row.univers]; if (!cu) return;
       participants.add(row.participant_id); if (row.societe) societes.add(row.societe);
       cu.n++;
-      const vals = [];
-      Object.entries(row.maitrise || {}).forEach(([q, v]) => { if (typeof v === "number") { vals.push(v); (cu.parQ[q] = cu.parQ[q] || []).push(v); } });
-      if (vals.length) cu.mat.push(moy(vals) / 3);
       const qui = [row.prenom, row.societe, row.fonction].filter(Boolean).join(" · ");
-      if (row.remarques && String(row.remarques).trim()) cu.remarques.push({ texte: String(row.remarques).trim(), qui, date: row.created_at });
       const aj = row.maitrise && Array.isArray(row.maitrise._ajouts) ? row.maitrise._ajouts : [];
-      aj.forEach(a => { if (a && typeof a.texte === "string" && a.texte.trim()) cu.questions.push({ id: a.id || "", texte: a.texte.trim(), v: (a.v === undefined ? null : a.v), qui, date: row.created_at }); });
-      const ql = row.maitrise && typeof row.maitrise._question === "string" ? row.maitrise._question.trim() : "";
-      if (ql) cu.questions.push({ id: "", texte: ql, v: null, qui, date: row.created_at });
+      aj.forEach(a => { if (a && typeof a.texte === "string" && a.texte.trim()) cu.propositions.push({ id: a.id || "", texte: a.texte.trim(), qui, date: row.created_at }); });
       Object.entries(row.cotation || {}).forEach(([id, c]) => {
         const cr = R[id]; if (!cr || !c) return;
         if (c.p && c.i) { cr.p.push(c.p); cr.i.push(c.i); cr.c.push(c.p * c.i); }
@@ -486,10 +535,10 @@
       });
     });
     const risques = Object.values(R).map(x => ({ ...x, n: x.c.length, mp: moy(x.p), mi: moy(x.i), mc: moy(x.c), sd: ecartType(x.c), min: x.c.length ? Math.min(...x.c) : null, max: x.c.length ? Math.max(...x.c) : null, pctRed: (x.acc + x.red) ? x.red / (x.acc + x.red) : null }));
-    const univers = Object.values(U).map(x => ({ ...x, maturite: moy(x.mat), expo: moy(risques.filter(r => r.u.code === x.u.code && r.n).map(r => r.mc)) }));
+    const univers = Object.values(U).map(x => ({ ...x, expo: moy(risques.filter(r => r.u.code === x.u.code && r.n).map(r => r.mc)) }));
     return {
       participants: participants.size, societes: societes.size, reponses: univers.reduce((s, u) => s + u.n, 0), univers, risques,
-      maturite: moy(univers.filter(u => u.maturite !== null).map(u => u.maturite)),
+      cotations: risques.reduce((s, r) => s + r.n, 0),
       expo: moy(risques.filter(r => r.n).map(r => r.mc)),
       couverts: univers.filter(u => u.n > 0).length
     };
@@ -524,9 +573,6 @@
 
   const libMaj = () => (S.res.maj ? "Mis à jour à " + S.res.maj.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "") + (S.store.isRemote ? "" : " · mode local");
 
-  const libMaitrise = v => (v === null || v === undefined) ? "" : ((S.ref.echelles.maitrise.find(a => String(a.v) === String(v)) || {}).l || "");
-  const chipMaitrise = v => (v === null || v === undefined) ? '<span class="chip">Non cotée</span>' : `<span class="chip ok">${t(libMaitrise(v))}</span>`;
-
   function dessinerResultats() {
     const y = window.scrollY;
     const f = S.res.filtres, seuil = S.res.seuil;
@@ -536,13 +582,13 @@
     const hors = A.risques.filter(r => r.n && r.mc > seuil).sort((a, b) => b.mc - a.mc);
     const top = A.risques.filter(r => r.n).sort((a, b) => b.mc - a.mc || b.n - a.n).slice(0, 10);
     const diverg = A.risques.filter(r => r.n >= 2).sort((a, b) => b.sd - a.sd).slice(0, 6);
-    const remarques = A.univers.flatMap(u => u.remarques.map(x => ({ ...x, u: u.u })));
-    const questionsLibres = A.univers.flatMap(u => u.questions.map(x => ({ ...x, u: u.u })));
+    const propositions = A.univers.flatMap(u => u.propositions.map(x => ({ ...x, u: u.u })));
     const tipR = r => `${r.r.id} · ${fr(r.r.libelle)}\nProbabilité ${fmt1(r.mp)} · Impact ${fmt1(r.mi)} · Criticité ${fmt1(r.mc)}\n${r.n} cotation${r.n > 1 ? "s" : ""} · Réduire : ${pct(r.pctRed)}`;
+    const delai = Number(CFG.rafraichissement) || 0;
 
     let h = `
       <div class="rhead"><div class="nav"><a class="btn lien" href="#/">← Accueil</a><span class="small muted" id="res-maj">${libMaj()}</span></div>
-        <h1>Résultats de la cartographie</h1><p class="muted">${t(CFG.sessionLabel || "")}</p></div>
+        <h1>Résultats de la cartographie</h1><p class="muted">${t(CFG.sessionLabel || "")}${delai ? ` · compilés en direct, rafraîchis toutes les ${delai} secondes` : ""}</p></div>
       ${S.store.isRemote ? "" : '<div class="bandeau">Mode local : seules les réponses saisies sur cet appareil sont affichées. Branchez Supabase dans config.js pour la collecte partagée.</div>'}
       ${S.store.isRemote && S.store.protege === false ? '<div class="bandeau">Lecture non protégée : la fonction d\'accès n\'est pas encore installée dans Supabase (exécuter supabase/securite.sql). En attendant, toute personne ayant le lien peut lire les réponses.</div>' : ""}
       ${S.res.erreur ? `<div class="bandeau erreur">Lecture impossible : ${esc(S.res.erreur)}</div>` : ""}
@@ -555,34 +601,28 @@
         <button class="btn" data-act="rafraichir">Actualiser</button>
         <button class="btn" data-act="export-brut">Exporter les réponses (CSV)</button>
         <button class="btn" data-act="export-risques">Synthèse risques (CSV)</button>
-        <button class="btn" data-act="export-maitrise">Synthèse maîtrise (CSV)</button>
       </div></div>`;
 
-    if (!rows.length) { h += '<div class="vide">Aucune réponse pour le moment. La page se met à jour automatiquement.</div>'; app.innerHTML = h; window.scrollTo(0, y); return; }
+    if (!rows.length) { h += '<div class="vide">Aucune cotation pour le moment. Les réponses arrivent en direct : la page se met à jour automatiquement dès la première.</div>'; app.innerHTML = h; window.scrollTo(0, y); return; }
 
     h += `
       <div class="kpis">
         <div class="kpi"><div class="v">${A.participants}</div><div class="l">participant${A.participants > 1 ? "s" : ""}</div></div>
-        <div class="kpi"><div class="v">${A.reponses}</div><div class="l">univers renseignés</div></div>
+        <div class="kpi"><div class="v">${A.cotations}</div><div class="l">cotation${A.cotations > 1 ? "s" : ""} de risque</div></div>
         <div class="kpi"><div class="v">${A.societes}</div><div class="l">société${A.societes > 1 ? "s" : ""} représentée${A.societes > 1 ? "s" : ""}</div></div>
         <div class="kpi"><div class="v">${A.couverts} / ${S.ref.univers.length}</div><div class="l">univers couverts</div></div>
-        <div class="kpi"><div class="v">${pct(A.maturite)}</div><div class="l">maîtrise moyenne des risques</div></div>
         <div class="kpi"><div class="v">${fmt1(A.expo)}</div><div class="l">criticité moyenne (sur 16)</div></div>
         <div class="kpi"><div class="v">${hors.length}</div><div class="l">risque${hors.length > 1 ? "s" : ""} au-delà du seuil ${seuil}</div></div>
       </div>
       <div class="grid2" style="margin-top:14px">
-        <div class="panel"><h2>Participation par univers</h2><p class="small muted">Nombre de participants ayant renseigné chaque univers.</p>
+        <div class="panel"><h2>Participation par univers</h2><p class="small muted">Nombre de participants ayant coté au moins un risque de l'univers.</p>
           ${barres(A.univers.map(u => ({ lab: u.u.court, v: u.n, txt: String(u.n), tip: fr(u.u.nom) })), { max: Math.max(1, A.participants), gris: true })}</div>
-        <div class="panel"><h2>Maîtrise des risques par univers</h2><p class="small muted">Moyenne des réponses de maîtrise, de 0 (non) à 100 (formalisé et contrôlé).</p>
-          ${barres(A.univers.filter(u => u.maturite !== null).sort((a, b) => a.maturite - b.maturite).map(u => ({ lab: u.u.court, v: u.maturite, txt: pct(u.maturite), tip: fr(u.u.nom) + " · " + u.n + " réponse" + (u.n > 1 ? "s" : "") })), { max: 1 })}</div>
-      </div>
-      <div class="grid2">
-        <div class="panel"><h2>Matrice des risques</h2><p class="small muted">Chaque point est un risque placé à sa probabilité et son impact moyens. Les dix plus critiques et ceux qui dépassent le seuil sont nommés ; survolez les autres.</p>
-          ${matriceSVG(A.risques, seuil, top, tipR)}
-          <div class="legende"><span><i class="sw" style="background:var(--niv-faible-bg)"></i>Faible 1 à 3</span><span><i class="sw" style="background:var(--niv-modere-bg)"></i>Modéré 4 à 6</span><span><i class="sw" style="background:var(--niv-eleve-bg)"></i>Élevé 8 à 9</span><span><i class="sw" style="background:var(--niv-critique-bg)"></i>Critique 12 à 16</span><span><i class="sw" style="background:var(--gris);border-radius:50%"></i>Risque coté</span><span><i class="sw" style="background:var(--encre);border-radius:50%"></i>Au-delà du seuil</span></div>
-        </div>
         <div class="panel"><h2>Exposition moyenne par univers</h2><p class="small muted">Criticité moyenne des risques cotés, sur 16.</p>
           ${barres(A.univers.filter(u => u.expo !== null).sort((a, b) => b.expo - a.expo).map(u => ({ lab: u.u.court, v: u.expo, txt: fmt1(u.expo), tip: fr(u.u.nom) })), { max: 16, gris: true })}</div>
+      </div>
+      <div class="panel"><h2>Matrice des risques</h2><p class="small muted">Chaque point est un risque placé à sa probabilité et son impact moyens. Les dix plus critiques et ceux qui dépassent le seuil sont nommés ; survolez les autres.</p>
+        ${matriceSVG(A.risques, seuil, top, tipR)}
+        <div class="legende"><span><i class="sw" style="background:var(--niv-faible-bg)"></i>Faible 1 à 3</span><span><i class="sw" style="background:var(--niv-modere-bg)"></i>Modéré 4 à 6</span><span><i class="sw" style="background:var(--niv-eleve-bg)"></i>Élevé 8 à 9</span><span><i class="sw" style="background:var(--niv-critique-bg)"></i>Critique 12 à 16</span><span><i class="sw" style="background:var(--gris);border-radius:50%"></i>Risque coté</span><span><i class="sw" style="background:var(--encre);border-radius:50%"></i>Au-delà du seuil</span></div>
       </div>
       <div class="panel"><h2>Les dix risques les plus critiques</h2>
         <table class="res"><thead><tr><th>Risque</th><th>Univers</th><th class="num">P</th><th class="num">I</th><th class="num">Criticité</th><th class="num">Réduire</th><th class="num">Cotations</th></tr></thead><tbody>
@@ -596,13 +636,10 @@
           ${diverg.length ? `<table class="res"><thead><tr><th>Risque</th><th>Étendue 1 à 16</th><th class="num">Écart-type</th></tr></thead><tbody>${diverg.map(r => `<tr><td><strong>${r.r.id}</strong> ${t(r.r.libelle)}<br><span class="small muted">${r.n} cotations</span></td><td><div class="range" title="de ${r.min} à ${r.max}, moyenne ${fmt1(r.mc)}"><span style="left:${(r.min - 1) / 15 * 100}%;width:${(r.max - r.min) / 15 * 100}%"></span><i style="left:${(r.mc - 1) / 15 * 100}%"></i></div></td><td class="num">${fmt1(r.sd)}</td></tr>`).join("")}</tbody></table>` : '<p class="muted">Il faut au moins deux cotations par risque.</p>'}
         </div>
       </div>
-      <div class="panel"><h2>Questions ajoutées par les participants (${questionsLibres.length})</h2>
-        <p class="small muted">Mesures de maîtrise proposées dans un chapitre, avec la réponse donnée. Elles n'entrent pas dans la moyenne de maîtrise.</p>
-        ${questionsLibres.length ? questionsLibres.map(x => `<div class="remarque"><div class="qui"><strong>${t(x.u.court)}</strong> · ${esc(x.qui)} · ${fmtDate(x.date)}</div><div>${esc(x.texte)} ${chipMaitrise(x.v)}</div></div>`).join("") : '<p class="muted">Aucune question ajoutée pour le moment.</p>'}
-      </div>
-      ${remarques.length ? `<div class="panel"><h2>Remarques des participants (${remarques.length})</h2>
-        ${remarques.map(x => `<div class="remarque"><div class="qui"><strong>${t(x.u.court)}</strong> · ${esc(x.qui)} · ${fmtDate(x.date)}</div><div>${esc(x.texte).replace(/\n/g, "<br>")}</div></div>`).join("")}
-      </div>` : ""}`;
+      <div class="panel"><h2>Mesures de maîtrise proposées par les participants (${propositions.length})</h2>
+        <p class="small muted">Mesures que les participants jugent manquantes dans la partie 1 d'un chapitre, restituées telles quelles.</p>
+        ${propositions.length ? propositions.map(x => `<div class="remarque"><div class="qui"><strong>${t(x.u.court)}</strong> · ${esc(x.qui)} · ${fmtDate(x.date)}</div><div>${esc(x.texte)}</div></div>`).join("") : '<p class="muted">Aucune mesure proposée pour le moment.</p>'}
+      </div>`;
     app.innerHTML = h; window.scrollTo(0, y);
   }
 
@@ -618,20 +655,16 @@
 
   function exportBrut() {
     const rows = filtrer(S.res.rows), out = [["Participant", "Prénom", "Société", "Fonction", "Périmètre", "Métiers", "Univers", "Date", "Type", "Identifiant", "Libellé", "Valeur", "Valeur en clair"]];
-    const E = S.ref.echelles;
     rows.forEach(r => {
       const u = parCode(r.univers); if (!u) return;
       const base = [r.participant_id, r.prenom || "", r.societe || "", r.fonction || "", r.perimetre || "", (r.metiers || []).join(", "), u.code, r.created_at || ""];
-      u.questions.forEach(qq => { const v = (r.maitrise || {})[qq.id]; if (v === undefined) return; const lab = (E.maitrise.find(a => String(a.v) === String(v)) || {}).l || ""; out.push([...base, "maitrise", qq.id, fr(qq.texte), v, lab]); });
       u.risques.forEach(rr => { const c = (r.cotation || {})[rr.id]; if (!c) return;
         if (c.p) out.push([...base, "probabilite", rr.id, fr(rr.libelle), c.p, nomProba[c.p] || ""]);
         if (c.i) out.push([...base, "impact", rr.id, fr(rr.libelle), c.i, nomImpact[c.i] || ""]);
         if (c.p && c.i) out.push([...base, "criticite", rr.id, fr(rr.libelle), c.p * c.i, niveau(c.p * c.i).l]);
         if (c.t) out.push([...base, "traitement", rr.id, fr(rr.libelle), c.t, c.t === "red" ? "Réduire" : "Accepter"]);
       });
-      if (r.remarques) out.push([...base, "remarques", u.code, "", "", r.remarques]);
-      const ql = (r.maitrise || {})._question; if (ql) out.push([...base, "question_ajoutee", u.code, ql, "", ""]);
-      ((r.maitrise || {})._ajouts || []).forEach(a => { if (!a || !a.texte) return; out.push([...base, "question_ajoutee", a.id || "", fr(a.texte), a.v ?? "", libMaitrise(a.v)]); });
+      ((r.maitrise || {})._ajouts || []).forEach(a => { if (!a || !a.texte) return; out.push([...base, "mesure_proposee", a.id || "", fr(a.texte), "", ""]); });
     });
     telechargerCSV("carto-reponses-" + horodatage() + ".csv", out);
   }
@@ -641,16 +674,6 @@
     A.risques.forEach(r => out.push([r.r.id, r.u.code, fr(r.r.libelle), (r.r.mesures || []).join(", "), r.r.subi ? "oui" : "", r.n, fmt1(r.mp), fmt1(r.mi), fmt1(r.mc), r.n ? niveau(Math.round(r.mc)).l : "", fmt1(r.sd), r.min ?? "", r.max ?? "", r.pctRed === null ? "" : Math.round(r.pctRed * 100) + " %", r.n && r.mc > seuil ? "oui" : "non"]));
     telechargerCSV("carto-synthese-risques-" + horodatage() + ".csv", out);
   }
-  function exportMaitrise() {
-    const A = agreger(filtrer(S.res.rows));
-    const out = [["Univers", "Mesure", "Texte", "Risques couverts", "Réponses notées", "Moyenne (0 à 3)", "Maîtrise", "Non", "En partie", "Formalisé", "Formalisé et contrôlé", "Je ne sais pas", "Non concerné"]];
-    const autres = {}; filtrer(S.res.rows).forEach(r => Object.entries(r.maitrise || {}).forEach(([k, v]) => { if (k.startsWith("_")) return; if (typeof v !== "number") { autres[k] = autres[k] || { nsp: 0, na: 0 }; if (v in autres[k]) autres[k][v]++; } }));
-    A.univers.forEach(u => {
-      u.u.questions.forEach(q => { const vals = u.parQ[q.id] || []; const cnt = v => vals.filter(x => x === v).length; const o = autres[q.id] || { nsp: 0, na: 0 }; out.push([u.u.code, q.id, fr(q.texte), (S.parMesure[q.id] || []).join(", "), vals.length, fmt1(moy(vals)), vals.length ? pct(moy(vals) / 3) : "", cnt(0), cnt(1), cnt(2), cnt(3), o.nsp, o.na]); });
-      u.questions.forEach(x => out.push([u.u.code, "Question ajoutée" + (x.id ? " " + x.id : ""), fr(x.texte) + " (" + x.qui + ")", "", "", typeof x.v === "number" ? x.v : "", libMaitrise(x.v), "", "", "", "", "", ""]));
-    });
-    telechargerCSV("carto-synthese-maitrise-" + horodatage() + ".csv", out);
-  }
 
   /* ---------- Événements ---------- */
   app.addEventListener("click", e => {
@@ -658,28 +681,17 @@
     const a = b.dataset.act;
     if (a === "ouvrir") { go("/u/" + b.dataset.code); return; }
     if (a === "editer-profil") { e.preventDefault(); go("/"); return; }
-    if (a === "annuler-profil") { S.editionProfil = false; render(); return; }
     if (a === "retour") { if (history.length > 1) history.back(); else go("/"); return; }
     if (a === "enregistrer") { enregistrer(b.dataset.code, b.dataset.suite); return; }
     if (a === "rafraichir") { chargerResultats(); return; }
     if (a === "export-brut") { exportBrut(); return; }
     if (a === "export-risques") { exportRisques(); return; }
-    if (a === "export-maitrise") { exportMaitrise(); return; }
-    // Saisie : pastilles
+    // Saisie : pastilles de cotation
     const r = route(); if (r.name !== "saisie") return;
     const u = parCode(r.code), m = mesU(r.code);
-    if (a === "maitrise") {
-      const v = isNaN(Number(b.dataset.v)) ? b.dataset.v : Number(b.dataset.v);
-      if (m.maitrise[b.dataset.q] === v) delete m.maitrise[b.dataset.q]; else m.maitrise[b.dataset.q] = v;
-      b.parentElement.querySelectorAll(".pill").forEach(x => x.classList.toggle("on", x === b && m.maitrise[b.dataset.q] !== undefined));
-    } else if (a === "ajout-v") {
-      const aj = m.ajouts.find(x => x.id === b.dataset.q); if (!aj) return;
-      const v = isNaN(Number(b.dataset.v)) ? b.dataset.v : Number(b.dataset.v);
-      if (aj.v === v) delete aj.v; else aj.v = v;
-      b.parentElement.querySelectorAll(".pill").forEach(x => x.classList.toggle("on", x === b && aj.v !== undefined));
-    } else if (a === "ajout-retirer") {
+    if (a === "ajout-retirer") {
       m.ajouts = m.ajouts.filter(x => x.id !== b.dataset.id);
-      m.modifie = Date.now(); persist(); redessinerSaisie(u); toast("Question retirée."); return;
+      m.modifie = Date.now(); persist(); redessinerSaisie(u); planifierEnvoi(u.code); toast("Proposition retirée."); return;
     } else if (a === "p" || a === "i" || a === "t") {
       const c = m.cotation[b.dataset.r] = m.cotation[b.dataset.r] || {};
       const v = a === "t" ? b.dataset.v : Number(b.dataset.v);
@@ -688,7 +700,7 @@
       b.parentElement.querySelectorAll(".pill").forEach(x => x.classList.toggle("on", x === b && c[a] !== undefined));
       const badge = b.closest(".risque").querySelector(".crit-badge"); if (badge) badge.innerHTML = badgeCrit(c);
     } else return;
-    m.modifie = Date.now(); persist(); majBarre(u);
+    m.modifie = Date.now(); persist(); majBarre(u); planifierEnvoi(u.code);
   });
   bottom.addEventListener("click", e => { const b = e.target.closest("[data-act=enregistrer]"); if (b) enregistrer(b.dataset.code, b.dataset.suite); });
   app.addEventListener("change", e => {
@@ -703,11 +715,11 @@
       e.preventDefault(); const r = route(); if (r.name !== "saisie") return;
       const u = parCode(r.code), m = mesU(r.code);
       const texte = (e.target.querySelector("#ajout-texte").value || "").trim().slice(0, 300);
-      if (!texte) { toast("Écrivez d'abord votre question."); return; }
-      if (m.ajouts.length >= MAX_AJOUTS) { toast("Nombre maximal de questions ajoutées atteint."); return; }
+      if (!texte) { toast("Écrivez d'abord votre proposition."); return; }
+      if (m.ajouts.length >= MAX_AJOUTS) { toast("Nombre maximal de mesures proposées atteint."); return; }
       const id = idAjout(r.code, m.ajouts);
       m.ajouts.push({ id, texte }); m.modifie = Date.now(); persist();
-      redessinerSaisie(u); toast("Question ajoutée : répondez-y comme aux autres.");
+      redessinerSaisie(u); planifierEnvoi(u.code); toast("Mesure proposée, merci.");
       const el = app.querySelector(`.q[data-q="${id}"]`); if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
     }
     if (e.target.id === "f-cle") { e.preventDefault(); const v = e.target.querySelector("#cle").value.trim(); if (!v) { toast("Saisissez la clé d'accès."); return; } stockerCle(v); render(); }
@@ -717,6 +729,9 @@
   app.addEventListener("mousemove", e => { if (!tip.classList.contains("on")) return; const x = Math.min(e.clientX + 14, window.innerWidth - 310), y = e.clientY + 16; tip.style.left = x + "px"; tip.style.top = y + "px"; });
   app.addEventListener("mouseout", e => { if (e.target.closest("[data-tip]")) tip.classList.remove("on"); });
   window.addEventListener("hashchange", render);
+  // Téléphone mis en veille, onglet fermé ou changé : l'envoi en attente part avec keepalive
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") envoyerSansAttendre({ keepalive: true }); });
+  window.addEventListener("pagehide", () => envoyerSansAttendre({ keepalive: true }));
 
   /* ---------- Démarrage ---------- */
   async function init() {

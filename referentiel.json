@@ -1,6 +1,6 @@
 {
- "version": "2026-10-13-v5-relecture-guillaume",
- "source": "Référentiel de Guillaume Macher (12 octobre 2026) revu avec les remarques des groupes marchés et fonctions support de l'atelier du 12 octobre, les décisions de la réunion d'équipe Procivis UES-AP du 12 octobre, les arbitrages de Guillaume Macher du 13 octobre sur les neuf points restés ouverts, puis sa relecture de cohérence du 13 octobre (suppression du chapitre Marché, mesures et risques ajoutés, doublons regroupés, nomenclature CODE-M et CODE-R, liens entre mesures et risques)",
+ "version": "2026-10-14-v6-reponses-guillaume",
+ "source": "Référentiel de Guillaume Macher (12 octobre 2026) revu avec les remarques des groupes marchés et fonctions support de l'atelier du 12 octobre, les décisions de la réunion d'équipe Procivis UES-AP du 12 octobre, les arbitrages de Guillaume Macher du 13 octobre sur les neuf points restés ouverts, puis sa relecture de cohérence du 13 octobre (suppression du chapitre Marché, mesures et risques ajoutés, doublons regroupés, nomenclature CODE-M et CODE-R, liens entre mesures et risques), puis ses réponses du 13 octobre au soir (JUR-R4 reclassé en risque maîtrisé, MOA-R2 et MOA-R6 fusionnés)",
  "echelles": {
   "maitrise": [
    {
@@ -301,8 +301,7 @@
      "mesures": [
       "JUR-M4",
       "JUR-M5"
-     ],
-     "subi": true
+     ]
     },
     {
      "id": "JUR-R5",
@@ -888,9 +887,11 @@
     },
     {
      "id": "MOA-R2",
-     "libelle": "Dérive des coûts et des délais",
+     "libelle": "Dérive des coûts et des délais dégradant la marge de l'opération",
      "mesures": [
-      "MOA-M2"
+      "MOA-M2",
+      "AMC-M4",
+      "PRO-M1"
      ]
     },
     {
@@ -919,15 +920,6 @@
     },
     {
      "id": "MOA-R6",
-     "libelle": "Marge insuffisante liée à une dérive du coût de revient",
-     "mesures": [
-      "MOA-M2",
-      "AMC-M4",
-      "PRO-M1"
-     ]
-    },
-    {
-     "id": "MOA-R7",
      "libelle": "Recours contre un permis ou blocage administratif d'une opération",
      "mesures": [
       "MOA-M6"

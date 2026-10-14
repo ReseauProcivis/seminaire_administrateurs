@@ -29,7 +29,7 @@ Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à �
 
 Chaque univers est enregistré séparément : une réponse partielle compte. Les réponses sont aussi conservées sur l'appareil, ce qui permet de reprendre plus tard et de renvoyer automatiquement ce qui n'a pas pu partir.
 
-## Référentiel (version 5, 13 octobre 2026)
+## Référentiel (version 6, 14 octobre 2026)
 
 - **Nomenclature.** Les mesures de maîtrise s'appellent `CODE-M1`, `CODE-M2`... et les risques `CODE-R1`, `CODE-R2`..., numérotés sans trou dans l'ordre d'affichage de chaque chapitre (`CODE` est le code du chapitre, par exemple `GOV`). Un identifiant supprimé n'est jamais réutilisé. Une fois la collecte ouverte, plus aucune renumérotation : les réponses sont enregistrées avec ces identifiants.
 - **Liens.** Chaque risque porte la liste `mesures` des identifiants qui le réduisent, parfois dans un autre chapitre. L'application en déduit, pour chaque mesure, les risques qu'elle couvre, et affiche les deux sous chaque item. Un risque sans mesure et une mesure sans risque sont signalés en rouge à la saisie.
@@ -37,7 +37,7 @@ Chaque univers est enregistré séparément : une réponse partielle compte. Les
 - **Questions ajoutées.** Au bas de la partie 2 de chaque chapitre, un participant peut ajouter jusqu'à cinq questions de maîtrise, cotées comme les autres. Elles voyagent dans le champ `maitrise` sous la clé `_ajouts` (liste `{id, texte, v}`, identifiants `GOV-X1`, `GOV-X2`...), n'entrent pas dans la moyenne du chapitre et ressortent à part dans les résultats et les exports.
 - Le champ `remarques` de la table n'est plus alimenté depuis la version 4.
 
-Pour modifier le référentiel : éditer `referentiel.json`. Chaque univers comporte un `code`, un `nom`, un `court`, un `bloc` (`soc` ou `met`), des `metiers` (vide = toujours proposé), une `reference`, une `intro`, des `questions` (`id`, `texte`, `texte_reseau` facultatif) et des `risques` (`id`, `libelle`, `mesures`, `subi` facultatif). Mettre à jour `version` à chaque évolution ; ne plus renuméroter après l'ouverture de la collecte. La correspondance des identifiants entre la v4 et la v5 est conservée hors du dépôt (dossier `arbitrages-2026-10-13`).
+Pour modifier le référentiel : éditer `referentiel.json`. Chaque univers comporte un `code`, un `nom`, un `court`, un `bloc` (`soc` ou `met`), des `metiers` (vide = toujours proposé), une `reference`, une `intro`, des `questions` (`id`, `texte`, `texte_reseau` facultatif) et des `risques` (`id`, `libelle`, `mesures`, `subi` facultatif). Mettre à jour `version` à chaque évolution ; ne plus renuméroter après l'ouverture de la collecte. La correspondance des identifiants entre la v4 et la v5 est conservée hors du dépôt (dossier `arbitrages-2026-10-13`), celle de la v5 vers la v6 dans `arbitrages-2026-10-14` (seul le chapitre MOA bouge : MOA-R6 fusionné dans MOA-R2, MOA-R7 devenu MOA-R6). La v6 est la dernière renumérotation avant la collecte.
 
 ## Brancher Supabase
 
@@ -57,7 +57,7 @@ Tant que `securite.sql` n'a pas été exécuté, la page de résultats se replie
 
 Les réponses ne sont pas dans le dépôt mais dans Supabase. Deux façons de nettoyer :
 
-1. **Sans rien supprimer** : changer `session` dans `config.js` et pousser. La page ne lit que la session courante (c'est ce qui a été fait le 13 octobre avec la v5). Les anciennes réponses restent consultables en ajoutant `?s=ancienne-session` à l'adresse, avec la clé.
+1. **Sans rien supprimer** : changer `session` dans `config.js` et pousser. La page ne lit que la session courante (c'est ce qui a été fait le 13 octobre avec la v5 et le 14 octobre avec la v6). Les anciennes réponses restent consultables en ajoutant `?s=ancienne-session` à l'adresse, avec la clé.
 2. **En supprimant** : exécuter `supabase/nettoyage.sql` dans l'éditeur SQL de Supabase (un `select` de contrôle, puis le `delete`). La clé publique de la page ne peut pas supprimer, c'est voulu.
 
 ## Test en local

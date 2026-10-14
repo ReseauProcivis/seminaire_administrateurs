@@ -49,8 +49,8 @@ revoke all on function public.lire_reponses(text, text) from public;
 grant execute on function public.lire_reponses(text, text) to anon;
 
 -- 4. Contrôle : la première requête doit échouer, la seconde renvoyer les lignes de la session
--- select * from public.lire_reponses('seminaire-administrateurs-2026-10-20-v5', 'mauvaise-cle');
--- select count(*) from public.lire_reponses('seminaire-administrateurs-2026-10-20-v5', 'REMPLACER-PAR-LA-CLE-CHOISIE');
+-- select * from public.lire_reponses('seminaire-administrateurs-2026-10-20-v6', 'mauvaise-cle');
+-- select count(*) from public.lire_reponses('seminaire-administrateurs-2026-10-20-v6', 'REMPLACER-PAR-LA-CLE-CHOISIE');
 
 -- Pour changer la clé plus tard :
 -- update public.parametres set valeur = 'NOUVELLE-CLE' where nom = 'cle_resultats';

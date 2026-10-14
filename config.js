@@ -3,9 +3,10 @@
    Laisser supabaseUrl vide => mode local (les réponses restent sur l'appareil). */
 window.CARTO_CONFIG = {
   // Identifiant technique de la session de collecte (sert à regrouper les réponses).
-  // Changé le 13 octobre 2026 avec le référentiel v5 : les réponses de test des sessions précédentes
-  // ne sont plus lues (remise à zéro), elles restent purgeables avec supabase/nettoyage.sql.
-  session: "seminaire-administrateurs-2026-10-20-v5",
+  // Changé le 13 octobre 2026 avec le référentiel v5, puis le 14 octobre avec la v6 (dernière renumérotation,
+  // chapitre MOA) : les réponses de test des sessions précédentes ne sont plus lues (remise à zéro),
+  // elles restent purgeables avec supabase/nettoyage.sql.
+  session: "seminaire-administrateurs-2026-10-20-v6",
   // Libellé affiché sur la page d'accueil
   sessionLabel: "Séminaire des administrateurs - 20 octobre 2026",
   // Supabase : URL du projet et clé publique (« publishable », conçue pour être exposée dans le navigateur).

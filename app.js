@@ -477,7 +477,10 @@
   const stockerCle = c => { try { if (c) sessionStorage.setItem("carto.cle", c); else sessionStorage.removeItem("carto.cle"); } catch (e) { /* stockage indisponible */ } };
   function accesResultats() {
     if (!S.store.isRemote) return true;
-    const c = PARAMS.get("cle"); if (c) { stockerCle(c); return true; }
+    // La clé passée dans l'adresse (?cle=...) n'est lue qu'une fois : si la base la refuse, la page
+    // redemande la clé au lieu de la relire à chaque rendu et de boucler sur la base.
+    const c = PARAMS.get("cle");
+    if (c && !S.cleUrlLue) { S.cleUrlLue = true; stockerCle(c); return true; }
     return !!cleStockee();
   }
 
@@ -497,7 +500,13 @@
       change = emp !== S.res.empreinte || !!S.res.erreur; S.res.empreinte = emp;
       S.res.rows = rows; S.res.maj = new Date();
     } catch (e) {
-      if (e && e.code === "cle") { S.res.chargement = false; stockerCle(""); S.res.rows = []; S.res.empreinte = null; if (route().name === "resultats") { render(); toast("Clé d'accès incorrecte."); } return; }
+      if (e && e.code === "cle") {
+        // Clé refusée (fausse, ou changée depuis) : on arrête le rafraîchissement et on redemande la clé
+        S.res.chargement = false; stockerCle(""); S.res.rows = []; S.res.empreinte = null;
+        if (S.res.timer) { clearInterval(S.res.timer); S.res.timer = null; }
+        if (route().name === "resultats") { render(); toast("Clé d'accès incorrecte."); }
+        return;
+      }
       S.res.erreur = e.message || String(e);
     }
     S.res.chargement = false;

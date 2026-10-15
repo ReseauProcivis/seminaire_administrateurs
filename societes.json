@@ -1,5 +1,5 @@
 {
- "_commentaire": "Liste proposée dans le menu « Structure ». Depuis le 15 octobre 2026, seuls les trois groupes du séminaire des administrateurs du 20 octobre y figurent (décision de Maxime) ; la liste des 47 populations de l'Agora est conservée dans l'historique git (commit e6af8b0) si elle doit revenir. Modifier librement : une entrée par ligne, ordre d'affichage conservé.",
+ "_commentaire": "Liste proposée dans le menu « Structure ». Depuis le 15 octobre 2026, seuls les trois groupes du séminaire des administrateurs du 20 octobre y figurent (décision de Maxime) ; la liste des 47 populations de l'Agora est conservée dans l'historique git (commit e6af8b0) si elle doit revenir. Modifier librement : une entrée par ligne, ordre d'affichage conservé ; cet ordre fixe aussi la couleur des points de chaque groupe sur la matrice des résultats.",
  "societes": [
   "Groupe admin 1",
   "Groupe admin 2",

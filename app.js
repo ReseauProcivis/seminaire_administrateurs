@@ -52,7 +52,7 @@
     participant: lsGet("carto.participant", null),
     mes: lsGet("carto.mesReponses", {}),
     file: lsGet("carto.fileAttente", []),
-    res: { rows: [], maj: null, filtres: { societe: "", fonction: "", perimetre: "", bloc: "" }, seuil: Number(CFG.seuilDefaut) || 6, chargement: false, erreur: null, timer: null, actif: false }
+    res: { rows: [], maj: null, filtres: { societe: "", bloc: "" }, seuil: Number(CFG.seuilDefaut) || 6, chargement: false, erreur: null, timer: null, actif: false }
   };
   const persist = () => { lsSet("carto.participant", S.participant); lsSet("carto.mesReponses", S.mes); lsSet("carto.fileAttente", S.file); };
 
@@ -529,30 +529,43 @@
 
   function filtrer(rows) {
     const f = S.res.filtres;
-    return rows.filter(r => (!f.societe || r.societe === f.societe) && (!f.fonction || r.fonction === f.fonction) && (!f.perimetre || r.perimetre === f.perimetre) && (!f.bloc || (parCode(r.univers) || {}).bloc === f.bloc));
+    return rows.filter(r => (!f.societe || r.societe === f.societe) && (!f.bloc || (parCode(r.univers) || {}).bloc === f.bloc));
   }
+
+  // Couleurs des points de la matrice, une par groupe dans l'ordre de societes.json, lisibles sur les quatre fonds de cellule
+  const COULEURS_GROUPES = ["#3E7A14", "#1D5BBF", "#A0287A", "#0E7C86", "#C2410C", "#1F2124"];
 
   function agreger(rows) {
     const U = {}; S.ref.univers.forEach(u => U[u.code] = { u, n: 0, propositions: [] });
-    const R = {}; S.ref.univers.forEach(u => u.risques.forEach(r => R[r.id] = { r, u, p: [], i: [], c: [], acc: 0, red: 0 }));
-    const participants = new Set(), societes = new Set();
+    const vide = () => { const R = {}; S.ref.univers.forEach(u => u.risques.forEach(r => R[r.id] = { r, u, p: [], i: [], c: [], acc: 0, red: 0 })); return R; };
+    const R = vide(), G = {};   // R : tous groupes confondus (tableaux) ; G : par groupe (matrice, un point par risque et par groupe)
     rows.forEach(row => {
       const cu = U[row.univers]; if (!cu) return;
-      participants.add(row.participant_id); if (row.societe) societes.add(row.societe);
       cu.n++;
+      const nomG = row.societe || "Sans groupe";
+      if (!G[nomG]) G[nomG] = vide();
+      const RG = G[nomG];
       const qui = [row.prenom, row.societe, row.fonction].filter(Boolean).join(" · ");
       const aj = row.maitrise && Array.isArray(row.maitrise._ajouts) ? row.maitrise._ajouts : [];
       aj.forEach(a => { if (a && typeof a.texte === "string" && a.texte.trim()) cu.propositions.push({ id: a.id || "", texte: a.texte.trim(), qui, date: row.created_at }); });
       Object.entries(row.cotation || {}).forEach(([id, c]) => {
         const cr = R[id]; if (!cr || !c) return;
-        if (c.p && c.i) { cr.p.push(c.p); cr.i.push(c.i); cr.c.push(c.p * c.i); }
+        if (c.p && c.i) [cr, RG[id]].forEach(x => { x.p.push(c.p); x.i.push(c.i); x.c.push(c.p * c.i); });
         if (c.t === "acc") cr.acc++; else if (c.t === "red") cr.red++;
       });
     });
-    const risques = Object.values(R).map(x => ({ ...x, n: x.c.length, mp: moy(x.p), mi: moy(x.i), mc: moy(x.c), sd: ecartType(x.c), min: x.c.length ? Math.min(...x.c) : null, max: x.c.length ? Math.max(...x.c) : null, pctRed: (x.acc + x.red) ? x.red / (x.acc + x.red) : null }));
+    const stats = x => ({ ...x, n: x.c.length, mp: moy(x.p), mi: moy(x.i), mc: moy(x.c), sd: ecartType(x.c), min: x.c.length ? Math.min(...x.c) : null, max: x.c.length ? Math.max(...x.c) : null, pctRed: (x.acc + x.red) ? x.red / (x.acc + x.red) : null });
+    const risques = Object.values(R).map(stats);
     const univers = Object.values(U).map(x => ({ ...x, expo: moy(risques.filter(r => r.u.code === x.u.code && r.n).map(r => r.mc)) }));
+    // Groupes présents, dans l'ordre de societes.json puis par ordre alphabétique ; la couleur suit la position dans societes.json
+    const connus = (S.soc && S.soc.societes) || [];
+    const autres = Object.keys(G).filter(n => !connus.includes(n)).sort((a, b) => a.localeCompare(b, "fr"));
+    const groupes = [...connus.filter(n => G[n]), ...autres].map(nom => {
+      const k = connus.indexOf(nom), idx = k >= 0 ? k : connus.length + autres.indexOf(nom);
+      return { nom, couleur: COULEURS_GROUPES[idx % COULEURS_GROUPES.length], risques: Object.values(G[nom]).map(stats).filter(x => x.n) };
+    });
     return {
-      participants: participants.size, societes: societes.size, reponses: univers.reduce((s, u) => s + u.n, 0), univers, risques,
+      reponses: univers.reduce((s, u) => s + u.n, 0), univers, risques, groupes,
       cotations: risques.reduce((s, r) => s + r.n, 0),
       expo: moy(risques.filter(r => r.n).map(r => r.mc)),
       couverts: univers.filter(u => u.n > 0).length
@@ -565,23 +578,41 @@
     return `<div class="bars">${items.map(x => `<div class="bar${x.sub ? " sub" : ""}" data-tip="${esc(x.tip || "")}"><span class="lab" title="${esc(x.lab)}">${t(x.lab)}</span><span class="track"><span class="fill${opts.gris ? " gris" : ""}" style="width:${x.v === null || x.v === undefined ? 0 : Math.max(0, Math.min(100, x.v / max * 100))}%"></span></span><span class="val">${x.txt}</span></div>`).join("")}</div>`;
   }
 
-  function matriceSVG(risques, seuil, top, tipR) {
-    const W = 620, H = 520, L = 86, B = 46, T = 12, R = 14;
+  function matriceSVG(groupes, seuil, nommes, nommerHors, tipP) {
+    // Marge gauche de 124 : « 3 · Occasionnel » ne chevauche plus le titre de l'axe (remarque de Guillaume du 15 octobre 2026)
+    const W = 640, H = 520, L = 124, B = 46, T = 12, R = 14;
     const pw = W - L - R, ph = H - T - B;
     const sx = v => L + (v - 0.5) / 4 * pw, sy = v => T + ph - (v - 0.5) / 4 * ph;
-    let s = `<svg class="scatter" viewBox="0 0 ${W} ${H}" role="img" aria-label="Matrice des risques : probabilité moyenne en ordonnée, impact moyen en abscisse">`;
+    let s = `<svg class="scatter" viewBox="0 0 ${W} ${H}" role="img" aria-label="Matrice des risques : probabilité moyenne en ordonnée, impact moyen en abscisse, une couleur par groupe">`;
     for (let p = 1; p <= 4; p++) for (let i = 1; i <= 4; i++) s += `<rect x="${sx(i - 0.5) + 1}" y="${sy(p + 0.5) + 1}" width="${pw / 4 - 2}" height="${ph / 4 - 2}" rx="6" class="c-${niveau(p * i).k}"/>`;
     for (let v = 1; v <= 4; v++) {
       s += `<text x="${sx(v)}" y="${H - 26}" text-anchor="middle" class="axl">${v} · ${nomImpact[v]}</text>`;
       s += `<text x="${L - 8}" y="${sy(v) + 4}" text-anchor="end" class="axl">${v} · ${nomProba[v]}</text>`;
     }
     s += `<text x="${L + pw / 2}" y="${H - 8}" text-anchor="middle" class="axt">Impact moyen</text>`;
-    s += `<text transform="translate(14 ${T + ph / 2}) rotate(-90)" text-anchor="middle" class="axt">Probabilité moyenne</text>`;
-    const nommes = new Set(top.map(r => r.r.id));
-    risques.filter(r => r.n).sort((a, b) => a.mc - b.mc).forEach(r => {
-      const h = [...r.r.id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
-      const cx = sx(r.mi) + ((h % 11) - 5) * 1.3, cy = sy(r.mp) + (((h >> 4) % 11) - 5) * 1.3, hors = r.mc > seuil;
-      s += `<g class="pt${hors ? " hors" : ""}" data-tip="${esc(tipR(r))}"><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${hors ? 7 : 6}"/>${(nommes.has(r.r.id) || hors) ? `<text x="${(cx + 9).toFixed(1)}" y="${(cy + 4).toFixed(1)}" class="ptl">${r.r.id}</text>` : ""}</g>`;
+    s += `<text transform="translate(12 ${T + ph / 2}) rotate(-90)" text-anchor="middle" class="axt">Probabilité moyenne</text>`;
+    // Un point par risque et par groupe. Les points d'un même risque se répartissent en anneau autour de sa position,
+    // chaque groupe à un angle fixe, pour rester distincts quand les groupes donnent la même cotation.
+    const n = groupes.length, pts = [];
+    groupes.forEach((g, gi) => {
+      const ang = 2 * Math.PI * gi / n, dx = n > 1 ? Math.cos(ang) * 7 : 0, dy = n > 1 ? Math.sin(ang) * 7 : 0;
+      g.risques.forEach(r => {
+        const h = [...r.r.id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+        const hors = r.mc > seuil;
+        pts.push({ r, g, hors, cx: sx(r.mi) + ((h % 11) - 5) * 1.3 + dx, cy: sy(r.mp) + (((h >> 4) % 11) - 5) * 1.3 + dy, gauche: dx < -0.5, nomme: nommes.has(r.r.id) || (nommerHors && hors) });
+      });
+    });
+    pts.sort((a, b) => a.r.mc - b.r.mc).forEach(p => {
+      s += `<g class="pt${p.hors ? " hors" : ""}" data-tip="${esc(tipP(p.r, p.g))}"><circle cx="${p.cx.toFixed(1)}" cy="${p.cy.toFixed(1)}" r="${p.hors ? 7 : 6}" fill="${p.g.couleur}"/></g>`;
+    });
+    // Étiquettes par-dessus les points : une seule par risque quand ses points sont serrés (même cotation dans les groupes),
+    // une par point quand les groupes divergent.
+    const parRisque = {};
+    pts.forEach(p => { if (p.nomme) (parRisque[p.r.r.id] = parRisque[p.r.r.id] || []).push(p); });
+    Object.values(parRisque).forEach(l => {
+      const serre = l.every(a => l.every(b => Math.hypot(a.cx - b.cx, a.cy - b.cy) <= 16));
+      const et = serre ? [{ x: Math.max(...l.map(p => p.cx)) + 9, y: l.reduce((t, p) => t + p.cy, 0) / l.length + 4, gauche: false }] : l.map(p => ({ x: p.cx + (p.gauche ? -9 : 9), y: p.cy + 4, gauche: p.gauche }));
+      et.forEach(e => { s += `<text x="${e.x.toFixed(1)}" y="${e.y.toFixed(1)}" class="ptl"${e.gauche ? ' text-anchor="end"' : ""}>${l[0].r.r.id}</text>`; });
     });
     return s + "</svg>";
   }
@@ -590,6 +621,7 @@
 
   function dessinerResultats() {
     const y = window.scrollY;
+    tip.classList.remove("on");   // l'infobulle d'un point survolé ne doit pas rester affichée après le nouveau rendu
     const f = S.res.filtres, seuil = S.res.seuil;
     const all = S.res.rows, rows = filtrer(all), A = agreger(rows);
     const opts = (vals, cur) => vals.map(v => `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(v)}</option>`).join("");
@@ -598,7 +630,8 @@
     const top = A.risques.filter(r => r.n).sort((a, b) => b.mc - a.mc || b.n - a.n).slice(0, 10);
     const diverg = A.risques.filter(r => r.n >= 2).sort((a, b) => b.sd - a.sd).slice(0, 6);
     const propositions = A.univers.flatMap(u => u.propositions.map(x => ({ ...x, u: u.u })));
-    const tipR = r => `${r.r.id} · ${fr(r.r.libelle)}\nProbabilité ${fmt1(r.mp)} · Impact ${fmt1(r.mi)} · Criticité ${fmt1(r.mc)}\n${r.n} cotation${r.n > 1 ? "s" : ""} · Réduire : ${pct(r.pctRed)}`;
+    const tipP = (r, g) => `${r.r.id} · ${fr(r.r.libelle)}\n${g.nom} : probabilité ${fmt1(r.mp)} · impact ${fmt1(r.mi)} · criticité ${fmt1(r.mc)}\n${r.n} cotation${r.n > 1 ? "s" : ""}`;
+    const plusieurs = A.groupes.length > 1;
     const delai = Number(CFG.rafraichissement) || 0;
 
     let h = `
@@ -608,9 +641,7 @@
       ${S.store.isRemote && S.store.protege === false ? '<div class="bandeau">Lecture non protégée : la fonction d\'accès n\'est pas encore installée dans Supabase (exécuter supabase/securite.sql). En attendant, toute personne ayant le lien peut lire les réponses.</div>' : ""}
       ${S.res.erreur ? `<div class="bandeau erreur">${/^Réinitialisation/.test(S.res.erreur) ? "" : "Lecture impossible : "}${esc(S.res.erreur)}</div>` : ""}
       <div class="panel"><div class="filtres">
-        <div><label for="fl-societe">Société</label><select id="fl-societe" data-filtre="societe"><option value="">Toutes</option>${opts(uniq("societe"), f.societe)}</select></div>
-        <div><label for="fl-fonction">Fonction</label><select id="fl-fonction" data-filtre="fonction"><option value="">Toutes</option>${opts(uniq("fonction"), f.fonction)}</select></div>
-        <div><label for="fl-perimetre">Périmètre</label><select id="fl-perimetre" data-filtre="perimetre"><option value="">Tous</option><option value="reseau"${f.perimetre === "reseau" ? " selected" : ""}>Réseau</option><option value="sacicap"${f.perimetre === "sacicap" ? " selected" : ""}>Ma société</option></select></div>
+        <div><label for="fl-societe">Groupe</label><select id="fl-societe" data-filtre="societe"><option value="">Tous</option>${opts(uniq("societe"), f.societe)}</select></div>
         <div><label for="fl-bloc">Bloc</label><select id="fl-bloc" data-filtre="bloc"><option value="">Tous</option>${S.ref.blocs.map(b => `<option value="${b.id}"${f.bloc === b.id ? " selected" : ""}>${t(b.nom)}</option>`).join("")}</select></div>
         <div><label for="fl-seuil">Seuil d'appétence</label><select id="fl-seuil" data-seuil>${S.ref.echelles.seuils.map(s => `<option value="${s.v}"${s.v === seuil ? " selected" : ""}>${t(s.l)}</option>`).join("")}</select></div>
         <button class="btn" data-act="rafraichir">Actualiser</button>
@@ -624,22 +655,16 @@
 
     h += `
       <div class="kpis">
-        <div class="kpi"><div class="v">${A.participants}</div><div class="l">participant${A.participants > 1 ? "s" : ""}</div></div>
         <div class="kpi"><div class="v">${A.cotations}</div><div class="l">cotation${A.cotations > 1 ? "s" : ""} de risque</div></div>
-        <div class="kpi"><div class="v">${A.societes}</div><div class="l">société${A.societes > 1 ? "s" : ""} représentée${A.societes > 1 ? "s" : ""}</div></div>
         <div class="kpi"><div class="v">${A.couverts} / ${S.ref.univers.length}</div><div class="l">univers couverts</div></div>
         <div class="kpi"><div class="v">${fmt1(A.expo)}</div><div class="l">criticité moyenne (sur 16)</div></div>
         <div class="kpi"><div class="v">${hors.length}</div><div class="l">risque${hors.length > 1 ? "s" : ""} au-delà du seuil ${seuil}</div></div>
       </div>
-      <div class="grid2" style="margin-top:14px">
-        <div class="panel"><h2>Participation par univers</h2><p class="small muted">Nombre de participants ayant coté au moins un risque de l'univers.</p>
-          ${barres(A.univers.map(u => ({ lab: u.u.court, v: u.n, txt: String(u.n), tip: fr(u.u.nom) })), { max: Math.max(1, A.participants), gris: true })}</div>
-        <div class="panel"><h2>Exposition moyenne par univers</h2><p class="small muted">Criticité moyenne des risques cotés, sur 16.</p>
-          ${barres(A.univers.filter(u => u.expo !== null).sort((a, b) => b.expo - a.expo).map(u => ({ lab: u.u.court, v: u.expo, txt: fmt1(u.expo), tip: fr(u.u.nom) })), { max: 16, gris: true })}</div>
-      </div>
-      <div class="panel"><h2>Matrice des risques</h2><p class="small muted">Chaque point est un risque placé à sa probabilité et son impact moyens. Les dix plus critiques et ceux qui dépassent le seuil sont nommés ; survolez les autres.</p>
-        ${matriceSVG(A.risques, seuil, top, tipR)}
-        <div class="legende"><span><i class="sw" style="background:var(--niv-faible-bg)"></i>Faible 1 à 3</span><span><i class="sw" style="background:var(--niv-modere-bg)"></i>Modéré 4 à 6</span><span><i class="sw" style="background:var(--niv-eleve-bg)"></i>Élevé 8 à 9</span><span><i class="sw" style="background:var(--niv-critique-bg)"></i>Critique 12 à 16</span><span><i class="sw" style="background:var(--gris);border-radius:50%"></i>Risque coté</span><span><i class="sw" style="background:var(--encre);border-radius:50%"></i>Au-delà du seuil</span></div>
+      <div class="panel" style="margin-top:14px"><h2>Exposition moyenne par univers</h2><p class="small muted">Criticité moyenne des risques cotés, sur 16.</p>
+        ${barres(A.univers.filter(u => u.expo !== null).sort((a, b) => b.expo - a.expo).map(u => ({ lab: u.u.court, v: u.expo, txt: fmt1(u.expo), tip: fr(u.u.nom) })), { max: 16, gris: true })}</div>
+      <div class="panel"><h2>Matrice des risques</h2><p class="small muted">${plusieurs ? "Un point par risque et par groupe, placé à la probabilité et à l'impact moyens donnés par ce groupe ; la couleur indique le groupe. Les dix risques les plus critiques sont nommés, les points cerclés de noir dépassent le seuil" : "Chaque point est un risque placé à sa probabilité et son impact moyens. Les dix plus critiques et ceux qui dépassent le seuil sont nommés"} ; survolez un point pour le détail.</p>
+        ${matriceSVG(A.groupes, seuil, new Set(top.map(r => r.r.id)), !plusieurs, tipP)}
+        <div class="legende">${A.groupes.map(g => `<span><i class="sw rond" style="background:${g.couleur}"></i>${esc(g.nom)}</span>`).join("")}<span><i class="sw rond hors"></i>Au-delà du seuil ${seuil}</span><span><i class="sw" style="background:var(--niv-faible-bg)"></i>Faible 1 à 3</span><span><i class="sw" style="background:var(--niv-modere-bg)"></i>Modéré 4 à 6</span><span><i class="sw" style="background:var(--niv-eleve-bg)"></i>Élevé 8 à 9</span><span><i class="sw" style="background:var(--niv-critique-bg)"></i>Critique 12 à 16</span></div>
       </div>
       <div class="panel"><h2>Les dix risques les plus critiques</h2>
         <table class="res"><thead><tr><th>Risque</th><th>Univers</th><th class="num">P</th><th class="num">I</th><th class="num">Criticité</th><th class="num">Réduire</th><th class="num">Cotations</th></tr></thead><tbody>
@@ -706,7 +731,7 @@
     try {
       const r = await S.store.reinitialiserSession(SESSION, cleStockee());
       S.res.archive = { nom: r.archive, lignes: r.lignes, heure: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) };
-      S.res.rows = []; S.res.empreinte = null; S.res.erreur = null; S.res.filtres = { societe: "", fonction: "", perimetre: "", bloc: "" };
+      S.res.rows = []; S.res.empreinte = null; S.res.erreur = null; S.res.filtres = { societe: "", bloc: "" };
       setStatut(S.store.isRemote ? "ok" : "off", S.store.isRemote ? "Connecté" : "Mode local");
       toast("Session réinitialisée : " + r.lignes + " réponse" + (r.lignes > 1 ? "s" : "") + " archivée" + (r.lignes > 1 ? "s" : "") + ".");
       dessinerResultats(); chargerResultats();

@@ -27,7 +27,7 @@ Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à �
 - `#/univers` liste des univers avec progression et état d'envoi
 - `#/u/GOV` saisie d'un univers : partie 1 « Maîtrise des risques », descriptive (les mesures se lisent, elles ne se cotent plus depuis le 14 octobre 2026), partie 2 « Cotation des risques » (probabilité, impact, traitement) suivie du champ « Proposer une mesure de maîtrise »
 - `#/aide` échelles de cotation, repères de lecture et cadre juridique
-- `#/resultats` page animateur, protégée par une clé d'accès : filtres, indicateurs, exposition par univers, matrice, top 10, divergences, mesures proposées par les participants, exports, bouton « Réinitialiser la session ». Deux onglets dans l'en-tête, « Formulaire » et « Résultats », permettent de basculer à tout moment ; la clé n'est demandée qu'une fois par onglet de navigation.
+- `#/resultats` page animateur, protégée par une clé d'accès : filtres (groupe, bloc, seuil d'appétence), indicateurs, exposition par univers, matrice des risques (un point par risque et par groupe, une couleur par groupe dans l'ordre de `societes.json`), top 10, divergences, mesures proposées par les participants, exports, bouton « Réinitialiser la session ». Deux onglets dans l'en-tête, « Formulaire » et « Résultats », permettent de basculer à tout moment ; la clé n'est demandée qu'une fois par onglet de navigation.
 
 Sur l'accueil, « Effacer ce rapport de cet appareil » repart avec un rapport neuf (les réponses déjà envoyées restent dans la base).
 

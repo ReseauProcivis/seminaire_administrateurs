@@ -172,7 +172,7 @@
         <form class="newform" id="f-profil" autocomplete="off">
           <div class="row">
             <label class="f" for="f-societe">Structure
-              <select id="f-societe" required><option value="">Ex. Réseau Procivis</option>${soc.map(x => `<option value="${esc(x)}"${sel(x, cur.societe)}>${esc(x)}</option>`).join("")}</select></label>
+              <select id="f-societe" required><option value="">Choisir votre groupe</option>${soc.map(x => `<option value="${esc(x)}"${sel(x, cur.societe)}>${esc(x)}</option>`).join("")}</select></label>
             <label class="f" for="f-fonction">Fonction
               <select id="f-fonction" required><option value="">Choisir</option>${fon.map(x => `<option value="${esc(x)}"${sel(x, cur.fonction)}>${esc(x)}</option>`).join("")}</select></label>
           </div>

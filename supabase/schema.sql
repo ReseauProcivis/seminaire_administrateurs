@@ -43,7 +43,8 @@ from public.reponses
 order by session, participant_id, univers, created_at desc;
 revoke select on public.reponses_dernieres from anon;
 
--- Lecture protégée par clé : table parametres + fonction lire_reponses
+-- Lecture protégée par clé : table parametres + fonction lire_reponses.
+-- Sur un projet neuf, exécuter ensuite supabase/reinitialisation.sql (lecture allégée, remise à zéro, export complet).
 create table if not exists public.parametres (
   nom text primary key,
   valeur text not null

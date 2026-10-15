@@ -15,7 +15,8 @@ Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à �
 | `societes.json` | Listes déroulantes : sociétés du réseau et fonctions |
 | `supabase/schema.sql` | Schéma complet pour un projet Supabase neuf |
 | `supabase/securite.sql` | Protection de la lecture des réponses sur le projet existant (clé d'accès vérifiée côté base) |
-| `supabase/direct.sql` | Facultatif : lecture allégée (dernière ligne par participant et univers) pour l'envoi en direct |
+| `supabase/reinitialisation.sql` | Lecture allégée, bouton « Réinitialiser la session » et export complet pour la sauvegarde (à exécuter une fois) |
+| `.github/workflows/sauvegarde.yml`, `.github/scripts/sauvegarde.py` | Sauvegarde automatique de toutes les réponses sur le Drive Leviia |
 | `supabase/nettoyage.sql` | Remise à zéro des réponses avant la collecte |
 | `qr.html` | Génération du QR code pour la slide |
 | `.github/workflows/keepalive.yml` | Maintient le projet Supabase gratuit actif |
@@ -26,13 +27,21 @@ Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à �
 - `#/univers` liste des univers avec progression et état d'envoi
 - `#/u/GOV` saisie d'un univers : partie 1 « Maîtrise des risques », descriptive (les mesures se lisent, elles ne se cotent plus depuis le 14 octobre 2026), partie 2 « Cotation des risques » (probabilité, impact, traitement) suivie du champ « Proposer une mesure de maîtrise »
 - `#/aide` échelles de cotation, repères de lecture et cadre juridique
-- `#/resultats` page animateur, protégée par une clé d'accès : filtres, indicateurs, exposition par univers, matrice, top 10, divergences, mesures proposées par les participants, exports. Deux onglets dans l'en-tête, « Formulaire » et « Résultats », permettent de basculer à tout moment ; la clé n'est demandée qu'une fois par onglet de navigation.
+- `#/resultats` page animateur, protégée par une clé d'accès : filtres, indicateurs, exposition par univers, matrice, top 10, divergences, mesures proposées par les participants, exports, bouton « Réinitialiser la session ». Deux onglets dans l'en-tête, « Formulaire » et « Résultats », permettent de basculer à tout moment ; la clé n'est demandée qu'une fois par onglet de navigation.
+
+Sur l'accueil, « Effacer ce rapport de cet appareil » repart avec un rapport neuf (les réponses déjà envoyées restent dans la base).
 
 ## Envoi en direct
 
 Chaque cotation est envoyée trois secondes après la dernière modification, sans attendre le bouton « Enregistrer » (qui reste là pour rassurer et forcer l'envoi). Un changement de page ou la mise en veille du téléphone déclenche l'envoi immédiat. Chaque envoi est une ligne complète de l'univers ; la page de résultats retient la dernière ligne par participant et univers. Un envoi qui échoue est gardé sur l'appareil (une ligne par univers) et repart dès que la connexion revient. La page de résultats se recompile toutes les quinze secondes (`rafraichissement` dans config.js) : elle affiche la synthèse dès la première cotation, même si deux risques seulement sont cotés.
 
-Comme un participant produit plusieurs lignes par univers, `supabase/direct.sql` (facultatif) redéfinit `lire_reponses` pour ne renvoyer que la dernière ligne de chacun : la lecture reste légère quel que soit le nombre d'envois.
+Comme un participant produit plusieurs lignes par univers, `supabase/reinitialisation.sql` redéfinit `lire_reponses` pour ne renvoyer que la dernière ligne de chacun : la lecture reste légère quel que soit le nombre d'envois.
+
+## Réinitialiser la session et sauvegarder
+
+Dans l'onglet Résultats (clé saisie), le bouton **Réinitialiser la session** demande une confirmation, télécharge une sauvegarde CSV de toutes les réponses, puis appelle la fonction `reinitialiser_session` : les lignes de la session sont renommées `session-archive-AAAA-MM-JJ-HHhMM`. La page repart vide, rien n'est supprimé, l'archive reste consultable avec `?s=nom-de-l-archive` dans l'adresse des résultats. Il faut avoir exécuté une fois `supabase/reinitialisation.sql` ; sinon le bouton l'indique.
+
+La **sauvegarde automatique** (`.github/workflows/sauvegarde.yml`) lit toutes les réponses, archives comprises, et les dépose sur le Drive Leviia dans `Cartographie des risques/<date> <session>/` : `reponses.csv` (dernière réponse par participant et univers, format long) et `reponses-brutes.json` (toutes les lignes), plus `derniere-sauvegarde.txt`. Elle tourne toutes les six heures, toutes les dix minutes le 20 octobre 2026 entre 7 h et 19 h, et à la demande depuis l'onglet Actions du dépôt. Secrets du dépôt : `RESULTATS_CLE`, `LEVIIA_URL`, `LEVIIA_USER`, `LEVIIA_TOKEN` (mot de passe d'application Leviia, révocable depuis cloud.leviia.com). Tant que `lire_toutes_reponses` n'est pas installée, seule la session courante est sauvegardée.
 
 ## Référentiel (version 6, 14 octobre 2026)
 
@@ -51,7 +60,7 @@ Pour modifier le référentiel : éditer `referentiel.json`. Chaque univers comp
 2. Dans `config.js`, renseigner `supabaseUrl` (Project URL) et `supabaseAnonKey` (clé « publishable »).
 3. Dans le dépôt GitHub, ajouter les secrets `SUPABASE_URL` et `SUPABASE_ANON_KEY` pour le keep-alive.
 
-Sur le projet déjà en service (créé avec l'ancien schéma), exécuter seulement `supabase/securite.sql`, clé remplacée, puis `supabase/direct.sql`.
+Sur le projet déjà en service (créé avec l'ancien schéma), exécuter seulement `supabase/securite.sql`, clé remplacée, puis `supabase/reinitialisation.sql`.
 
 ## Accès aux résultats et sécurité
 
@@ -61,7 +70,7 @@ Tant que `securite.sql` n'a pas été exécuté, la page de résultats se replie
 
 ## Repartir de zéro avant de partager le lien
 
-Les réponses ne sont pas dans le dépôt mais dans Supabase. Deux façons de nettoyer :
+Les réponses ne sont pas dans le dépôt mais dans Supabase. Le plus simple est le bouton « Réinitialiser la session » de l'onglet Résultats (voir plus haut). Deux autres façons :
 
 1. **Sans rien supprimer** : changer `session` dans `config.js` et pousser. La page ne lit que la session courante (c'est ce qui a été fait le 13 octobre avec la v5 et le 14 octobre avec la v6). Les anciennes réponses restent consultables en ajoutant `?s=ancienne-session` à l'adresse, avec la clé.
 2. **En supprimant** : exécuter `supabase/nettoyage.sql` dans l'éditeur SQL de Supabase (un `select` de contrôle, puis le `delete`). La clé publique de la page ne peut pas supprimer, c'est voulu.

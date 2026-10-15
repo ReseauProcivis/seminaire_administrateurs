@@ -198,7 +198,10 @@
       rapports += `<div class="panel" style="padding:0;overflow-x:auto"><table class="res rap"><thead><tr><th>Structure</th><th>Intitulé</th><th>Périmètre</th><th>Mis à jour</th><th>Progression</th><th class="num">Criticité moyenne</th><th></th></tr></thead><tbody>
         <tr><td><a class="btn lien" href="#/univers">${esc(p.societe)}</a></td><td>${esc(p.prenom || p.fonction)}</td><td><span class="chip">${p.perimetre === "sacicap" ? "SACICAP" : "Réseau"}</span></td><td class="muted">${maj ? fmtDate(maj) : "-"}</td>
         <td><div style="display:flex;gap:8px;align-items:center;min-width:140px"><div class="progress" style="flex:1"><span style="width:${tot ? Math.round(fait / tot * 100) : 0}%"></span></div><span class="num">${tot ? Math.round(fait / tot * 100) : 0} %</span></div></td>
-        <td class="num">${crit === null ? "-" : fmt1(crit) + " / 16"}</td><td><a class="btn" href="#/univers">Ouvrir</a></td></tr></tbody></table></div>`;
+        <td class="num">${crit === null ? "-" : fmt1(crit) + " / 16"}</td><td><a class="btn" href="#/univers">Ouvrir</a></td></tr></tbody></table></div>
+        ${S.confirmEffacer
+          ? `<div class="panel confirm-local"><p><strong>Effacer ce rapport de cet appareil ?</strong> Vous repartirez avec un rapport neuf. Les réponses déjà envoyées restent dans la base et dans les résultats.</p><div class="actions"><button class="btn danger" data-act="effacer-ok">Oui, effacer</button><button class="btn" data-act="effacer-non">Annuler</button></div></div>`
+          : `<p class="small muted" style="margin-top:8px"><a href="#" data-act="effacer-local">Effacer ce rapport de cet appareil</a> pour repartir de zéro, par exemple après un test.</p>`}`;
     }
     rapports += "</section>";
     return `
@@ -594,7 +597,7 @@
         <h1>Résultats de la cartographie</h1><p class="muted">${t(CFG.sessionLabel || "")}${delai ? ` · compilés en direct, rafraîchis toutes les ${delai} secondes` : ""}</p></div>
       ${S.store.isRemote ? "" : '<div class="bandeau">Mode local : seules les réponses saisies sur cet appareil sont affichées. Branchez Supabase dans config.js pour la collecte partagée.</div>'}
       ${S.store.isRemote && S.store.protege === false ? '<div class="bandeau">Lecture non protégée : la fonction d\'accès n\'est pas encore installée dans Supabase (exécuter supabase/securite.sql). En attendant, toute personne ayant le lien peut lire les réponses.</div>' : ""}
-      ${S.res.erreur ? `<div class="bandeau erreur">Lecture impossible : ${esc(S.res.erreur)}</div>` : ""}
+      ${S.res.erreur ? `<div class="bandeau erreur">${/^Réinitialisation/.test(S.res.erreur) ? "" : "Lecture impossible : "}${esc(S.res.erreur)}</div>` : ""}
       <div class="panel"><div class="filtres">
         <div><label for="fl-societe">Société</label><select id="fl-societe" data-filtre="societe"><option value="">Toutes</option>${opts(uniq("societe"), f.societe)}</select></div>
         <div><label for="fl-fonction">Fonction</label><select id="fl-fonction" data-filtre="fonction"><option value="">Toutes</option>${opts(uniq("fonction"), f.fonction)}</select></div>
@@ -604,7 +607,9 @@
         <button class="btn" data-act="rafraichir">Actualiser</button>
         <button class="btn" data-act="export-brut">Exporter les réponses (CSV)</button>
         <button class="btn" data-act="export-risques">Synthèse risques (CSV)</button>
-      </div></div>`;
+      </div></div>
+      ${S.res.archive ? `<div class="bandeau ok">Session réinitialisée à ${S.res.archive.heure} : ${S.res.archive.lignes} réponse${S.res.archive.lignes > 1 ? "s" : ""} archivée${S.res.archive.lignes > 1 ? "s" : ""} sous « ${esc(S.res.archive.nom)} » (<a href="./?s=${encodeURIComponent(S.res.archive.nom)}#/resultats">consulter l'archive</a>). Une sauvegarde CSV a été téléchargée.</div>` : ""}
+      ${panneauReinit(all)}`;
 
     if (!rows.length) { h += '<div class="vide">Aucune cotation pour le moment. Les réponses arrivent en direct : la page se met à jour automatiquement dès la première.</div>'; app.innerHTML = h; window.scrollTo(0, y); return; }
 
@@ -656,8 +661,8 @@
   }
   const horodatage = () => new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
 
-  function exportBrut() {
-    const rows = filtrer(S.res.rows), out = [["Participant", "Prénom", "Société", "Fonction", "Périmètre", "Métiers", "Univers", "Date", "Type", "Identifiant", "Libellé", "Valeur", "Valeur en clair"]];
+  function exportBrut(tout, nomFichier) {
+    const rows = tout ? S.res.rows : filtrer(S.res.rows), out = [["Participant", "Prénom", "Société", "Fonction", "Périmètre", "Métiers", "Univers", "Date", "Type", "Identifiant", "Libellé", "Valeur", "Valeur en clair"]];
     rows.forEach(r => {
       const u = parCode(r.univers); if (!u) return;
       const base = [r.participant_id, r.prenom || "", r.societe || "", r.fonction || "", r.perimetre || "", (r.metiers || []).join(", "), u.code, r.created_at || ""];
@@ -669,7 +674,39 @@
       });
       ((r.maitrise || {})._ajouts || []).forEach(a => { if (!a || !a.texte) return; out.push([...base, "mesure_proposee", a.id || "", fr(a.texte), "", ""]); });
     });
-    telechargerCSV("carto-reponses-" + horodatage() + ".csv", out);
+    telechargerCSV(nomFichier || "carto-reponses-" + horodatage() + ".csv", out);
+  }
+
+  /* ---------- Remise à zéro de la session (animateur) ----------
+     Sauvegarde CSV de toutes les réponses sur l'ordinateur, puis archivage dans la base par la fonction
+     reinitialiser_session (supabase/reinitialisation.sql) : la page repart vide, l'archive reste consultable
+     avec ?s=nom-de-l-archive et la sauvegarde automatique la recopie sur Leviia. Rien n'est effacé. */
+  function panneauReinit(all) {
+    const nbPart = new Set(all.map(r => r.participant_id)).size;
+    const corps = S.res.confirmReinit
+      ? `<div class="confirm"><p><strong>Confirmer ?</strong> ${all.length} réponse${all.length > 1 ? "s" : ""} de ${nbPart} participant${nbPart > 1 ? "s" : ""} seront archivées et la session « ${esc(SESSION)} » repartira de zéro. Une sauvegarde CSV sera d'abord téléchargée.</p>
+          <div class="actions"><button class="btn danger" data-act="reinit-ok">Oui, réinitialiser la session</button><button class="btn" data-act="reinit-non">Annuler</button></div></div>`
+      : `<button class="btn danger" data-act="reinit"${all.length ? "" : " disabled"}>Réinitialiser la session</button>`;
+    return `<div class="panel reinit"><div class="reinit-in"><div><h2>Remise à zéro</h2><p class="small muted">Pour repartir de zéro avant un nouveau groupe ou après un test. Le bouton télécharge d'abord une sauvegarde CSV de toutes les réponses, puis archive la session dans la base : la page repart vide, l'archive reste consultable et la sauvegarde automatique la recopie sur Leviia. Rien n'est effacé.</p></div>${corps}</div></div>`;
+  }
+  async function reinitialiser() {
+    const all = S.res.rows; if (!all.length) { toast("Rien à réinitialiser."); return; }
+    S.res.confirmReinit = false;
+    exportBrut(true, "carto-sauvegarde-" + SESSION + "-" + horodatage() + ".csv");
+    setStatut("busy", "Réinitialisation");
+    try {
+      const r = await S.store.reinitialiserSession(SESSION, cleStockee());
+      S.res.archive = { nom: r.archive, lignes: r.lignes, heure: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) };
+      S.res.rows = []; S.res.empreinte = null; S.res.erreur = null; S.res.filtres = { societe: "", fonction: "", perimetre: "", bloc: "" };
+      setStatut(S.store.isRemote ? "ok" : "off", S.store.isRemote ? "Connecté" : "Mode local");
+      toast("Session réinitialisée : " + r.lignes + " réponse" + (r.lignes > 1 ? "s" : "") + " archivée" + (r.lignes > 1 ? "s" : "") + ".");
+      dessinerResultats(); chargerResultats();
+    } catch (e) {
+      setStatut(S.store.isRemote ? "ok" : "off", S.store.isRemote ? "Connecté" : "Mode local");
+      if (e && e.code === "cle") { stockerCle(""); render(); toast("Clé d'accès incorrecte."); return; }
+      S.res.erreur = "Réinitialisation impossible : " + (e.message || e);
+      dessinerResultats(); toast("Réinitialisation impossible.");
+    }
   }
   function exportRisques() {
     const A = agreger(filtrer(S.res.rows)), seuil = S.res.seuil;
@@ -689,6 +726,15 @@
     if (a === "rafraichir") { chargerResultats(); return; }
     if (a === "export-brut") { exportBrut(); return; }
     if (a === "export-risques") { exportRisques(); return; }
+    if (a === "reinit") { S.res.confirmReinit = true; dessinerResultats(); return; }
+    if (a === "reinit-non") { S.res.confirmReinit = false; dessinerResultats(); return; }
+    if (a === "reinit-ok") { reinitialiser(); return; }
+    if (a === "effacer-local") { e.preventDefault(); S.confirmEffacer = true; render(); return; }
+    if (a === "effacer-non") { S.confirmEffacer = false; render(); return; }
+    if (a === "effacer-ok") {
+      envoyerSansAttendre(); S.participant = null; S.mes = {}; S.file = []; S.confirmEffacer = false; persist(); render();
+      toast("Rapport effacé de cet appareil. Les réponses déjà envoyées restent dans la base."); return;
+    }
     // Saisie : pastilles de cotation
     const r = route(); if (r.name !== "saisie") return;
     const u = parCode(r.code), m = mesU(r.code);

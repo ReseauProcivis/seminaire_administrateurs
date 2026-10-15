@@ -16,6 +16,12 @@ class LocalStore {
     return true;
   }
   async listReponses(session) { return this._lire().filter(r => !session || r.session === session); }
+  async reinitialiserSession(session) {
+    const all = this._lire(), archive = session + "-archive-" + new Date().toISOString().slice(0, 16).replace("T", "-").replace(":", "h");
+    let n = 0; all.forEach(r => { if (r.session === session) { r.session = archive; n++; } });
+    localStorage.setItem(this.cle, JSON.stringify(all));
+    return { archive, lignes: n };
+  }
 }
 
 class SupabaseStore {
@@ -24,6 +30,7 @@ class SupabaseStore {
     const base = url.replace(/\/$/, "") + "/rest/v1";
     this.base = base + "/reponses";
     this.rpc = base + "/rpc/lire_reponses";
+    this.rpcReinit = base + "/rpc/reinitialiser_session";
     this.headers = { "apikey": key, "Authorization": "Bearer " + key, "Content-Type": "application/json" };
   }
   async saveReponse(row, opts) {
@@ -53,6 +60,16 @@ class SupabaseStore {
     }
     this.protege = true;
     return out;
+  }
+  // Remise à zéro : reinitialiser_session(p_session, p_cle) (supabase/reinitialisation.sql) archive les lignes
+  // de la session sous un nouveau nom et renvoie {archive, lignes}. Rien n'est supprimé.
+  async reinitialiserSession(session, cle) {
+    const res = await fetch(this.rpcReinit, { method: "POST", headers: this.headers, body: JSON.stringify({ p_session: session || "", p_cle: cle || "" }) });
+    const txt = await res.text();
+    if (res.ok) { const rows = JSON.parse(txt); const r = Array.isArray(rows) ? rows[0] : rows; return { archive: r && r.archive, lignes: Number(r && r.lignes) || 0 }; }
+    if (res.status === 404 && /PGRST202|reinitialiser_session/.test(txt)) throw new Error("La fonction de remise à zéro n'est pas encore installée dans Supabase : exécuter supabase/reinitialisation.sql.");
+    if (/cle_invalide/.test(txt)) { const e = new Error("Clé d'accès incorrecte."); e.code = "cle"; throw e; }
+    throw new Error("Supabase " + res.status + " : " + txt.slice(0, 200));
   }
   async _lireDirect(session) {
     const out = []; const page = 1000; let from = 0;

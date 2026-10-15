@@ -79,6 +79,8 @@ input:focus, select:focus, textarea:focus, button:focus-visible { outline: 3px s
 .btn.secondaire { background: var(--gris); border-color: var(--gris); color: #fff; }
 .btn.lien { border: 0; background: transparent; color: var(--accent-bleu); font-weight: 500; padding: 6px 4px; min-height: 0; }
 .btn[disabled] { opacity: .55; cursor: default; }
+.btn.danger { background: #FFE0E7; border-color: #FF3E65; color: #8A0F2E; }
+.btn.danger:hover { background: #FFD0DA; }
 .btn.bloc { width: 100%; }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 
@@ -197,6 +199,16 @@ table.res tr.hors td:first-child { border-left: 3px solid var(--encre); }
 .tooltip.on { display: block; }
 .bandeau { background: #FFF3C4; color: #6B5200; border: 1px solid #F3DC7A; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: .9rem; }
 .bandeau.erreur { background: #FFE0E7; color: #8A0F2E; border-color: #FFB3C2; }
+.bandeau.ok { background: var(--vert-pale); color: var(--vert-fonce); border-color: var(--vert); }
+/* Remise à zéro de la session (onglet Résultats) et effacement local (accueil) */
+.reinit-in { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.reinit-in > div:first-child { flex: 1 1 420px; }
+.reinit h2 { font-size: 1.05rem; margin-bottom: 4px; }
+.reinit p { margin: 0; }
+.reinit .confirm { flex: 1 1 100%; background: #FFE0E7; border-radius: 10px; padding: 12px 14px; color: #4D0718; }
+.reinit .confirm p { margin: 0 0 8px; }
+.reinit .confirm .actions { margin-top: 6px; }
+.confirm-local { border-left: 4px solid #FF3E65; }
 .vide { text-align: center; padding: 30px 10px; color: var(--encre-3); }
 @media (max-width: 480px) {
   .topbar .titre { font-size: .9rem; }

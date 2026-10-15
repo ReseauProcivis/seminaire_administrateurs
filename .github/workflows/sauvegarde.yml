@@ -1,0 +1,26 @@
+# Sauvegarde automatique des réponses sur le Drive Leviia (WebDAV), toutes sessions confondues,
+# archives comprises : dossier « Cartographie des risques / <date> <session> / » avec reponses.csv
+# (dernière réponse par participant et univers, format long) et reponses-brutes.json (toutes les lignes).
+# Secrets du dépôt : SUPABASE_URL, SUPABASE_ANON_KEY, RESULTATS_CLE (clé d'accès des résultats),
+# LEVIIA_URL (endpoint WebDAV du Drive), LEVIIA_USER, LEVIIA_TOKEN (mot de passe d'application).
+# Lancement manuel possible : onglet Actions du dépôt > Sauvegarde Leviia > Run workflow.
+name: Sauvegarde Leviia
+on:
+  schedule:
+    - cron: "23 */6 * * *"       # toutes les six heures
+    - cron: "*/10 5-17 20 10 *"  # le 20 octobre 2026 (séminaire), toutes les dix minutes de 7 h à 19 h, heure de Paris
+  workflow_dispatch:
+jobs:
+  sauvegarde:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export des réponses et dépôt sur Leviia
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          RESULTATS_CLE: ${{ secrets.RESULTATS_CLE }}
+          LEVIIA_URL: ${{ secrets.LEVIIA_URL }}
+          LEVIIA_USER: ${{ secrets.LEVIIA_USER }}
+          LEVIIA_TOKEN: ${{ secrets.LEVIIA_TOKEN }}
+        run: python3 .github/scripts/sauvegarde.py

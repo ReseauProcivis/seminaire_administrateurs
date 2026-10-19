@@ -46,15 +46,44 @@
     document.getElementById("statut-txt").textContent = txt;
   }
 
-  /* ---------- État ---------- */
+  /* ---------- État ----------
+     Depuis le 19 octobre 2026, un ordinateur peut porter plusieurs rapports (un par groupe) : chacun est rangé
+     dans localStorage sous « carto.r.<id> » et chaque onglet retient dans sessionStorage celui qu'il remplit.
+     Deux onglets ou deux fenêtres du même ordinateur ne partagent plus les mêmes cotations, et « Nouveau
+     rapport » crée toujours un nouveau participant (avant, un seul rapport par navigateur, réécrit à chaque fois). */
+  const PREFIXE = "carto.r.";
+  const ssGet = k => { try { return sessionStorage.getItem(k) || ""; } catch (e) { return ""; } };
+  const ssSet = (k, v) => { try { if (v) sessionStorage.setItem(k, v); else sessionStorage.removeItem(k); } catch (e) { /* stockage indisponible */ } };
+  const lsDel = k => { try { localStorage.removeItem(k); } catch (e) { /* stockage indisponible */ } };
+  function rapportsAppareil() {
+    const out = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(PREFIXE)) { const r = lsGet(k, null); if (r && r.participant && r.participant.id) out.push(r); }
+      }
+    } catch (e) { /* stockage indisponible */ }
+    return out.sort((a, b) => (b.maj || 0) - (a.maj || 0));
+  }
+  // Ancien format (un seul rapport par navigateur) : rangé dans la liste des rapports, sans être rouvert d'office
+  (function migrer() {
+    const p = lsGet("carto.participant", null);
+    if (p && p.id && !lsGet(PREFIXE + p.id, null)) lsSet(PREFIXE + p.id, { participant: p, mes: lsGet("carto.mesReponses", {}), file: lsGet("carto.fileAttente", []), maj: Date.now() });
+    ["carto.participant", "carto.mesReponses", "carto.fileAttente"].forEach(lsDel);
+  })();
+
   const S = {
-    ref: null, soc: null, store: null,
-    participant: lsGet("carto.participant", null),
-    mes: lsGet("carto.mesReponses", {}),
-    file: lsGet("carto.fileAttente", []),
+    ref: null, soc: null, store: null, participant: null, mes: {}, file: [],
     res: { rows: [], maj: null, filtres: { societe: "", bloc: "" }, seuil: Number(CFG.seuilDefaut) || 6, chargement: false, erreur: null, timer: null, actif: false }
   };
-  const persist = () => { lsSet("carto.participant", S.participant); lsSet("carto.mesReponses", S.mes); lsSet("carto.fileAttente", S.file); };
+  // Rapport rempli par cet onglet (vide : formulaire « Nouveau rapport »)
+  function chargerRapport(id) {
+    const r = id ? lsGet(PREFIXE + id, null) : null;
+    S.participant = (r && r.participant) || null; S.mes = (r && r.mes) || {}; S.file = (r && r.file) || [];
+    ssSet("carto.actif", S.participant ? S.participant.id : "");
+  }
+  chargerRapport(ssGet("carto.actif"));
+  const persist = () => { if (S.participant) lsSet(PREFIXE + S.participant.id, { participant: S.participant, mes: S.mes, file: S.file, maj: Date.now() }); };
 
   const universActifs = p => {
     const u = S.ref.univers;
@@ -78,15 +107,15 @@
   };
 
   // Seule la partie 2 (cotation des risques) se remplit : un risque compte quand probabilité et impact sont donnés
-  function progression(u) {
-    const m = S.mes[u.code] || {}, cot = m.cotation || {};
+  function progression(u, mes) {
+    const m = (mes || S.mes)[u.code] || {}, cot = m.cotation || {};
     const r = u.risques.filter(x => cot[x.id] && cot[x.id].p && cot[x.id].i).length;
     const tot = u.risques.length;
     return { fait: r, tot, etat: r === 0 ? "afaire" : r < tot ? "encours" : "termine" };
   }
-  const criticitesLocales = act => {
+  const criticitesLocales = (act, mes) => {
     const out = [];
-    act.forEach(u => { const m = S.mes[u.code]; if (!m || !m.cotation) return; u.risques.forEach(r => { const c = m.cotation[r.id]; if (c && c.p && c.i) out.push(c.p * c.i); }); });
+    act.forEach(u => { const m = (mes || S.mes)[u.code]; if (!m || !m.cotation) return; u.risques.forEach(r => { const c = m.cotation[r.id]; if (c && c.p && c.i) out.push(c.p * c.i); }); });
     return out;
   };
 
@@ -185,23 +214,31 @@
           </fieldset>
           <button class="btn primaire" type="submit">${p ? "Mettre à jour le rapport" : "Créer le rapport"}</button>
           <p class="note">${S.store.isRemote ? "Chaque cotation est enregistrée en direct et compilée dans les résultats du séminaire." : "Aperçu local : le rapport ne sera pas conservé après fermeture."}</p>
+          ${p ? `<p class="note">Un autre groupe sur cet ordinateur ? <button type="button" class="btn lien" data-act="nouveau">Commencer un nouveau rapport</button> (celui-ci reste dans la liste « Rapports sur cet ordinateur »).</p>`
+            : rapportsAppareil().length ? `<p class="note">Votre groupe a déjà commencé sur cet ordinateur ? Reprenez son rapport dans la liste « Rapports sur cet ordinateur », plus bas.</p>` : ""}
         </form>
       </div>`;
-    let rapports = `<section class="rapports"><div class="rap-head"><h2>Rapports</h2><span class="muted">${p ? "1 rapport" : "0 rapport"}</span></div>`;
-    if (!p) {
+    // Tous les rapports rangés sur cet ordinateur ; celui de cet onglet est marqué
+    const liste = rapportsAppareil();
+    let rapports = `<section class="rapports"><div class="rap-head"><h2>Rapports sur cet ordinateur</h2><span class="muted">${liste.length} rapport${liste.length > 1 ? "s" : ""}</span></div>`;
+    if (!liste.length) {
       rapports += `<div class="panel"><p><strong>Aucun rapport pour l'instant.</strong></p><p class="muted">Créez le premier avec le formulaire « Nouveau rapport » : il apparaîtra ici avec sa progression et sa criticité moyenne.</p></div>`;
     } else {
-      const act = universActifs(p);
-      const tot = act.reduce((x, u) => x + progression(u).tot, 0), fait = act.reduce((x, u) => x + progression(u).fait, 0);
-      const crit = moy(criticitesLocales(act));
-      const maj = Math.max(0, ...act.map(u => (S.mes[u.code] || {}).modifie || 0));
       rapports += `<div class="panel" style="padding:0;overflow-x:auto"><table class="res rap"><thead><tr><th>Structure</th><th>Intitulé</th><th>Périmètre</th><th>Mis à jour</th><th>Progression</th><th class="num">Criticité moyenne</th><th></th></tr></thead><tbody>
-        <tr><td><a class="btn lien" href="#/univers">${esc(p.societe)}</a></td><td>${esc(p.prenom || p.fonction)}</td><td><span class="chip">${p.perimetre === "sacicap" ? "SACICAP" : "Réseau"}</span></td><td class="muted">${maj ? fmtDate(maj) : "-"}</td>
+        ${liste.map(r => {
+          const q = r.participant, mes = r.mes || {}, ici = p && p.id === q.id, act = universActifs(q);
+          const tot = act.reduce((x, u) => x + progression(u, mes).tot, 0), fait = act.reduce((x, u) => x + progression(u, mes).fait, 0);
+          const crit = moy(criticitesLocales(act, mes));
+          const maj = Math.max(0, ...act.map(u => (mes[u.code] || {}).modifie || 0));
+          const ouvrir = ici ? `<a class="btn" href="#/univers">Ouvrir</a>` : `<button class="btn" data-act="reprendre" data-id="${esc(q.id)}">Reprendre</button>`;
+          return `<tr><td>${ici ? `<a class="btn lien" href="#/univers">${esc(q.societe)}</a> <span class="chip ok">Cet onglet</span>` : esc(q.societe)}</td><td>${esc(q.prenom || q.fonction)}</td><td><span class="chip">${q.perimetre === "sacicap" ? "SACICAP" : "Réseau"}</span></td><td class="muted">${maj ? fmtDate(maj) : "-"}</td>
         <td><div style="display:flex;gap:8px;align-items:center;min-width:140px"><div class="progress" style="flex:1"><span style="width:${tot ? Math.round(fait / tot * 100) : 0}%"></span></div><span class="num">${tot ? Math.round(fait / tot * 100) : 0} %</span></div></td>
-        <td class="num">${crit === null ? "-" : fmt1(crit) + " / 16"}</td><td><a class="btn" href="#/univers">Ouvrir</a></td></tr></tbody></table></div>
-        ${S.confirmEffacer
-          ? `<div class="panel confirm-local"><p><strong>Effacer ce rapport de cet appareil ?</strong> Vous repartirez avec un rapport neuf. Les réponses déjà envoyées restent dans la base et dans les résultats.</p><div class="actions"><button class="btn danger" data-act="effacer-ok">Oui, effacer</button><button class="btn" data-act="effacer-non">Annuler</button></div></div>`
-          : `<p class="small muted" style="margin-top:8px"><a href="#" data-act="effacer-local">Effacer ce rapport de cet appareil</a> pour repartir de zéro, par exemple après un test.</p>`}`;
+        <td class="num">${crit === null ? "-" : fmt1(crit) + " / 16"}</td><td style="white-space:nowrap">${ouvrir} <button class="btn lien" data-act="effacer-local" data-id="${esc(q.id)}">Effacer</button></td></tr>`;
+        }).join("")}</tbody></table></div>`;
+      const aEffacer = S.confirmEffacer && liste.find(r => r.participant.id === S.confirmEffacer);
+      rapports += aEffacer
+        ? `<div class="panel confirm-local"><p><strong>Effacer le rapport « ${esc(aEffacer.participant.societe)} · ${esc(aEffacer.participant.prenom || aEffacer.participant.fonction)} » de cet ordinateur ?</strong> Les réponses déjà envoyées restent dans la base et dans les résultats.</p><div class="actions"><button class="btn danger" data-act="effacer-ok">Oui, effacer</button><button class="btn" data-act="effacer-non">Annuler</button></div></div>`
+        : `<p class="small muted" style="margin-top:8px">Chaque onglet remplit son propre rapport : plusieurs groupes peuvent travailler sur le même ordinateur, chacun dans son onglet. « Effacer » retire un rapport de test de cet ordinateur.</p>`;
     }
     rapports += "</section>";
     return `
@@ -218,8 +255,10 @@
     const metiers = [...form.querySelectorAll("input[name=met]:checked")].map(x => x.value);
     if (!societe || !fonction) { toast("Indiquez votre société et votre fonction."); return; }
     if (perimetre === "sacicap" && !metiers.length) { toast("Cochez au moins un métier exercé."); return; }
-    S.participant = { id: (S.participant && S.participant.id) || uid(), societe, fonction, prenom, perimetre, metiers };
-    persist(); go("/univers");
+    // « remise » : dernière remise à zéro connue à la création ("?" si la base n'a pas encore répondu)
+    const remise = S.participant ? S.participant.remise : (remiseConnue === undefined ? "?" : remiseConnue);
+    S.participant = { id: (S.participant && S.participant.id) || uid(), societe, fonction, prenom, perimetre, metiers, remise };
+    ssSet("carto.actif", S.participant.id); persist(); go("/univers");
   }
 
   /* ---------- Liste des univers ---------- */
@@ -377,15 +416,20 @@
     const row = ligne(code), emp = empreinte(row);
     const enFile = S.file.some(r => r.univers === code);
     if (emp === m.empreinte && !enFile) return true;  // rien de nouveau depuis le dernier envoi
-    setStatut("busy", "Envoi");
     let ok = false;
+    const pid = row.participant_id, memeRapport = () => S.participant && S.participant.id === pid;
+    // Remise à zéro à distance : rien ne part d'un rapport commencé avant la dernière remise
+    if (!opts.keepalive) { const p = S.participant, v = await verifierRemise(); if (perime(p, v)) return false; }
+    setStatut("busy", "Envoi");
     try {
       await S.store.saveReponse(row, { keepalive: !!opts.keepalive });
-      m.envoye = Date.now(); m.empreinte = emp; S.file = S.file.filter(r => r.univers !== code); persist();
+      m.envoye = Date.now(); m.empreinte = emp; if (memeRapport()) { S.file = S.file.filter(r => r.univers !== code); persist(); }
       setStatut(S.store.isRemote ? "ok" : "off", S.store.isRemote ? "Enregistré" : "Mode local");
       ok = true;
     } catch (e) {
-      S.file = S.file.filter(r => r.univers !== code); S.file.push(row); persist();
+      // La ligne porte son participant_id : elle part bien au nom de son rapport, même rangée dans une autre file
+      if (memeRapport()) S.file = S.file.filter(r => r.univers !== code);
+      S.file.push(row); persist();
       setStatut("err", "Envoi en attente");
     }
     const r = route();
@@ -415,6 +459,7 @@
 
   async function viderFile() {
     if (!S.file.length || !S.store.isRemote) return;
+    await verifierRemise(); if (!S.file.length) return;
     const reste = [];
     for (const row of S.file) {
       try { await S.store.saveReponse(row); const m = S.mes[row.univers]; if (m) { m.envoye = Date.now(); m.empreinte = empreinte(row); } }
@@ -426,6 +471,41 @@
       const r = route();
       if (r.name === "univers") redessinerUnivers(); else if (r.name === "saisie") { const u = parCode(r.code); if (u) majBarre(u); }
     }
+  }
+
+  /* ---------- Remise à zéro à distance (19 octobre 2026) ----------
+     Le bouton « Remise à zéro » de l'onglet Résultats note l'heure de la remise dans la base
+     (supabase/remise-distance.sql). Chaque onglet la lit toutes les 5 secondes (demande de Maxime) et avant chaque envoi : un rapport
+     commencé avant la dernière remise est effacé de l'ordinateur, sans rien envoyer, et le formulaire revient sur
+     « Nouveau rapport ». Tant que la fonction n'est pas installée dans la base, rien ne change. */
+  let remiseConnue;  // undefined : pas encore lue ; null : aucune remise ; sinon horodatage de la dernière
+  const perime = (p, v) => v !== undefined && !!p && p.remise !== "?" && (p.remise ?? null) !== v;
+  async function verifierRemise() {
+    if (!S.store || !S.store.derniereRemise) return undefined;
+    const v = await S.store.derniereRemise(SESSION);
+    if (v === undefined) return undefined;
+    remiseConnue = v;
+    let efface = 0, actif = false;
+    rapportsAppareil().forEach(r => {
+      const q = r.participant;
+      if (S.participant && S.participant.id === q.id) return;  // celui de l'onglet est traité plus bas
+      if (q.remise === "?") lsSet(PREFIXE + q.id, { ...r, participant: { ...q, remise: v } });
+      else if (perime(q, v)) { lsDel(PREFIXE + q.id); efface++; }
+    });
+    if (S.participant) {
+      if (S.participant.remise === "?") { S.participant.remise = v; persist(); }
+      else if (perime(S.participant, v)) {
+        clearTimeout(envoiTimer); envoiTimer = null; envoiCode = null;  // rien ne part de l'ancien rapport
+        lsDel(PREFIXE + S.participant.id); chargerRapport(""); S.confirmEffacer = false; actif = true; efface++;
+      }
+    }
+    if (efface) {
+      const r = route();
+      if (actif && (r.name === "univers" || r.name === "saisie")) go("/");
+      else if (r.name === "accueil") render();
+      if (actif && r.name !== "resultats") toast("L'animateur a remis la session à zéro : choisissez votre groupe pour commencer un nouveau rapport.");
+    }
+    return v;
   }
 
   /* ---------- Aide ---------- */
@@ -718,15 +798,15 @@
   function panneauReinit(all) {
     const nbPart = new Set(all.map(r => r.participant_id)).size;
     const corps = S.res.confirmReinit
-      ? `<div class="confirm"><p><strong>Confirmer ?</strong> ${all.length} réponse${all.length > 1 ? "s" : ""} de ${nbPart} participant${nbPart > 1 ? "s" : ""} seront archivées et la session « ${esc(SESSION)} » repartira de zéro. Une sauvegarde CSV sera d'abord téléchargée.</p>
+      ? `<div class="confirm"><p><strong>Confirmer ?</strong> ${all.length ? `${all.length} réponse${all.length > 1 ? "s" : ""} de ${nbPart} participant${nbPart > 1 ? "s" : ""} seront archivées et la session « ${esc(SESSION)} » repartira de zéro. Une sauvegarde CSV sera d'abord téléchargée.` : "La session est déjà vide : seuls les formulaires ouverts sur les ordinateurs seront remis à zéro."}</p>
           <div class="actions"><button class="btn danger" data-act="reinit-ok">Oui, réinitialiser la session</button><button class="btn" data-act="reinit-non">Annuler</button></div></div>`
-      : `<button class="btn danger" data-act="reinit"${all.length ? "" : " disabled"}>Réinitialiser la session</button>`;
-    return `<div class="panel reinit"><div class="reinit-in"><div><h2>Remise à zéro</h2><p class="small muted">Pour repartir de zéro avant un nouveau groupe ou après un test. Le bouton télécharge d'abord une sauvegarde CSV de toutes les réponses, puis archive la session dans la base : la page repart vide, l'archive reste consultable et la sauvegarde automatique la recopie sur Leviia. Rien n'est effacé.</p></div>${corps}</div></div>`;
+      : `<button class="btn danger" data-act="reinit">Réinitialiser la session</button>`;
+    return `<div class="panel reinit"><div class="reinit-in"><div><h2>Remise à zéro</h2><p class="small muted">Pour repartir de zéro avant un nouveau groupe ou après un test. Le bouton télécharge d'abord une sauvegarde CSV de toutes les réponses, puis archive la session dans la base : la page repart vide, l'archive reste consultable et la sauvegarde automatique la recopie sur Leviia. Rien n'est effacé dans la base. Les formulaires ouverts sur tous les ordinateurs se vident d'eux-mêmes dans les 5 secondes et reviennent sur « Nouveau rapport ».</p></div>${corps}</div></div>`;
   }
   async function reinitialiser() {
-    const all = S.res.rows; if (!all.length) { toast("Rien à réinitialiser."); return; }
+    const all = S.res.rows;
     S.res.confirmReinit = false;
-    exportBrut(true, "carto-sauvegarde-" + SESSION + "-" + horodatage() + ".csv");
+    if (all.length) exportBrut(true, "carto-sauvegarde-" + SESSION + "-" + horodatage() + ".csv");
     setStatut("busy", "Réinitialisation");
     try {
       const r = await S.store.reinitialiserSession(SESSION, cleStockee());
@@ -734,7 +814,7 @@
       S.res.rows = []; S.res.empreinte = null; S.res.erreur = null; S.res.filtres = { societe: "", bloc: "" };
       setStatut(S.store.isRemote ? "ok" : "off", S.store.isRemote ? "Connecté" : "Mode local");
       toast("Session réinitialisée : " + r.lignes + " réponse" + (r.lignes > 1 ? "s" : "") + " archivée" + (r.lignes > 1 ? "s" : "") + ".");
-      dessinerResultats(); chargerResultats();
+      dessinerResultats(); chargerResultats(); verifierRemise();
     } catch (e) {
       setStatut(S.store.isRemote ? "ok" : "off", S.store.isRemote ? "Connecté" : "Mode local");
       if (e && e.code === "cle") { stockerCle(""); render(); toast("Clé d'accès incorrecte."); return; }
@@ -763,11 +843,15 @@
     if (a === "reinit") { S.res.confirmReinit = true; dessinerResultats(); return; }
     if (a === "reinit-non") { S.res.confirmReinit = false; dessinerResultats(); return; }
     if (a === "reinit-ok") { reinitialiser(); return; }
-    if (a === "effacer-local") { e.preventDefault(); S.confirmEffacer = true; render(); return; }
+    if (a === "nouveau") { envoyerSansAttendre(); persist(); chargerRapport(""); S.confirmEffacer = false; render(); toast("Nouveau rapport : choisissez le groupe puis « Créer le rapport »."); return; }
+    if (a === "reprendre") { envoyerSansAttendre(); persist(); chargerRapport(b.dataset.id); S.confirmEffacer = false; go("/univers"); viderFile(); return; }
+    if (a === "effacer-local") { e.preventDefault(); S.confirmEffacer = b.dataset.id || (S.participant && S.participant.id) || false; render(); return; }
     if (a === "effacer-non") { S.confirmEffacer = false; render(); return; }
     if (a === "effacer-ok") {
-      envoyerSansAttendre(); S.participant = null; S.mes = {}; S.file = []; S.confirmEffacer = false; persist(); render();
-      toast("Rapport effacé de cet appareil. Les réponses déjà envoyées restent dans la base."); return;
+      const id = S.confirmEffacer; S.confirmEffacer = false;
+      if (S.participant && S.participant.id === id) { envoyerSansAttendre(); chargerRapport(""); }
+      if (id) lsDel(PREFIXE + id);
+      render(); toast("Rapport effacé de cet ordinateur. Les réponses déjà envoyées restent dans la base."); return;
     }
     // Saisie : pastilles de cotation
     const r = route(); if (r.name !== "saisie") return;
@@ -827,7 +911,10 @@
     S.store = creerStore(CFG);
     setStatut(S.store.isRemote ? "ok" : "off", S.store.isRemote ? "Connecté" : "Mode local");
     render();
+    await verifierRemise();
     viderFile(); setInterval(viderFile, 30000);
+    setInterval(verifierRemise, 5000);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") verifierRemise(); });
     window.addEventListener("online", viderFile);
   }
   init();

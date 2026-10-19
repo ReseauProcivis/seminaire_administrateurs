@@ -1,7 +1,8 @@
 /* Couche de stockage des réponses.
    - LocalStore : tout reste dans le navigateur (tests, démonstration).
    - SupabaseStore : table « reponses » exposée par l'API REST de Supabase.
-   Les deux exposent la même interface : saveReponse(row, opts) et listReponses(session, cle).
+   Les deux exposent la même interface : saveReponse(row, opts), listReponses(session, cle), reinitialiserSession
+   et derniereRemise(session) (remise à zéro des formulaires à distance, 19 octobre 2026).
    opts.keepalive : l'envoi survit à la fermeture de la page (utilisé quand le téléphone passe en veille).
    La lecture passe par la fonction lire_reponses (supabase/securite.sql), qui vérifie la clé
    d'accès côté base : la clé publique du navigateur ne peut plus lire la table directement. */
@@ -20,8 +21,10 @@ class LocalStore {
     const all = this._lire(), archive = session + "-archive-" + new Date().toISOString().slice(0, 16).replace("T", "-").replace(":", "h");
     let n = 0; all.forEach(r => { if (r.session === session) { r.session = archive; n++; } });
     localStorage.setItem(this.cle, JSON.stringify(all));
+    localStorage.setItem("carto.remise." + session, new Date().toISOString());
     return { archive, lignes: n };
   }
+  async derniereRemise(session) { try { return localStorage.getItem("carto.remise." + session); } catch (e) { return undefined; } }
 }
 
 class SupabaseStore {
@@ -31,6 +34,7 @@ class SupabaseStore {
     this.base = base + "/reponses";
     this.rpc = base + "/rpc/lire_reponses";
     this.rpcReinit = base + "/rpc/reinitialiser_session";
+    this.rpcRemise = base + "/rpc/derniere_remise";
     this.headers = { "apikey": key, "Authorization": "Bearer " + key, "Content-Type": "application/json" };
   }
   async saveReponse(row, opts) {
@@ -70,6 +74,16 @@ class SupabaseStore {
     if (res.status === 404 && /PGRST202|reinitialiser_session/.test(txt)) throw new Error("La fonction de remise à zéro n'est pas encore installée dans Supabase : exécuter supabase/reinitialisation.sql.");
     if (/cle_invalide/.test(txt)) { const e = new Error("Clé d'accès incorrecte."); e.code = "cle"; throw e; }
     throw new Error("Supabase " + res.status + " : " + txt.slice(0, 200));
+  }
+  // Remise à zéro à distance (supabase/remise-distance.sql) : horodatage de la dernière remise de la session,
+  // null s'il n'y en a jamais eu, undefined si la fonction n'est pas installée ou si la base ne répond pas.
+  async derniereRemise(session) {
+    try {
+      const res = await fetch(this.rpcRemise, { method: "POST", headers: this.headers, body: JSON.stringify({ p_session: session || "" }) });
+      if (!res.ok) return undefined;
+      const v = await res.json();
+      return v === null || v === undefined ? null : String(v);
+    } catch (e) { return undefined; }
   }
   async _lireDirect(session) {
     const out = []; const page = 1000; let from = 0;

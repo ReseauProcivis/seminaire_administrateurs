@@ -16,6 +16,7 @@ Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à �
 | `supabase/schema.sql` | Schéma complet pour un projet Supabase neuf |
 | `supabase/securite.sql` | Protection de la lecture des réponses sur le projet existant (clé d'accès vérifiée côté base) |
 | `supabase/reinitialisation.sql` | Lecture allégée, bouton « Réinitialiser la session » et export complet pour la sauvegarde (à exécuter une fois) |
+| `supabase/remise-distance.sql` | Remise à zéro des formulaires ouverts sur tous les ordinateurs par le même bouton (à exécuter une fois, après reinitialisation.sql) |
 | `.github/workflows/sauvegarde.yml`, `.github/scripts/sauvegarde.py` | Sauvegarde automatique de toutes les réponses sur le Drive Leviia |
 | `supabase/nettoyage.sql` | Remise à zéro des réponses avant la collecte |
 | `qr.html` | Génération du QR code pour la slide |
@@ -29,7 +30,7 @@ Application web statique (HTML, CSS, JavaScript sans dépendance) destinée à �
 - `#/aide` échelles de cotation, repères de lecture et cadre juridique
 - `#/resultats` page animateur, protégée par une clé d'accès : filtres (groupe, bloc, seuil d'appétence), indicateurs, exposition par univers, matrice des risques (un point par risque et par groupe, une couleur par groupe dans l'ordre de `societes.json`), top 10, divergences, mesures proposées par les participants, exports, bouton « Réinitialiser la session ». Deux onglets dans l'en-tête, « Formulaire » et « Résultats », permettent de basculer à tout moment ; la clé n'est demandée qu'une fois par onglet de navigation.
 
-Sur l'accueil, « Effacer ce rapport de cet appareil » repart avec un rapport neuf (les réponses déjà envoyées restent dans la base).
+Plusieurs rapports par ordinateur (depuis le 19 octobre 2026) : chaque onglet remplit son propre rapport, rangé dans le navigateur sous `carto.r.<id>` ; l'onglet retient le sien dans sessionStorage. Deux groupes peuvent donc travailler sur le même ordinateur, chacun dans son onglet, et « Commencer un nouveau rapport » crée toujours un nouveau participant (auparavant, un seul rapport par navigateur, réécrit d'un groupe à l'autre). Un onglet neuf s'ouvre sur « Nouveau rapport » ; la liste « Rapports sur cet ordinateur » permet de reprendre ou d'effacer un rapport (les réponses déjà envoyées restent dans la base). Des ordinateurs ou téléphones différents sont de toute façon indépendants : tout se compile dans la page de résultats.
 
 ## Envoi en direct
 
@@ -40,6 +41,8 @@ Comme un participant produit plusieurs lignes par univers, `supabase/reinitialis
 ## Réinitialiser la session et sauvegarder
 
 Dans l'onglet Résultats (clé saisie), le bouton **Réinitialiser la session** demande une confirmation, télécharge une sauvegarde CSV de toutes les réponses, puis appelle la fonction `reinitialiser_session` : les lignes de la session sont renommées `session-archive-AAAA-MM-JJ-HHhMM`. La page repart vide, rien n'est supprimé, l'archive reste consultable avec `?s=nom-de-l-archive` dans l'adresse des résultats. Il faut avoir exécuté une fois `supabase/reinitialisation.sql` ; sinon le bouton l'indique.
+
+Remise à distance (19 octobre 2026, `supabase/remise-distance.sql`) : le même bouton note l'heure de la remise dans la table `parametres` (ligne `remise:<session>`), même quand la session est déjà vide. Chaque formulaire la lit toutes les 5 secondes et avant chaque envoi (fonction publique `derniere_remise`, qui ne renvoie qu'une date) : tout rapport commencé avant la dernière remise est effacé de l'ordinateur sans rien envoyer, et l'onglet revient sur « Nouveau rapport » avec un message. Personne n'a donc à cliquer « Effacer » autour de la table. Sans la fonction en base, les formulaires se comportent comme avant. Les scripts de `index.html` portent un numéro de version (`?v=...`) à changer à chaque mise en ligne, pour qu'aucun navigateur ne garde un ancien `store.js` ou `app.js` en cache.
 
 La **sauvegarde automatique** (`.github/workflows/sauvegarde.yml`) lit toutes les réponses, archives comprises, et les dépose sur le Drive Leviia dans `Cartographie des risques/<date> <session>/` : `reponses.csv` (dernière réponse par participant et univers, format long) et `reponses-brutes.json` (toutes les lignes), plus `derniere-sauvegarde.txt`. Elle tourne toutes les six heures, toutes les dix minutes le 20 octobre 2026 entre 7 h et 19 h, et à la demande depuis l'onglet Actions du dépôt. Secrets du dépôt : `RESULTATS_CLE`, `LEVIIA_URL`, `LEVIIA_USER`, `LEVIIA_TOKEN` (mot de passe d'application Leviia, révocable depuis cloud.leviia.com). Tant que `lire_toutes_reponses` n'est pas installée, seule la session courante est sauvegardée.
 

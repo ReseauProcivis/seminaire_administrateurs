@@ -1,0 +1,104 @@
+/* Couche de stockage des réponses.
+   - LocalStore : tout reste dans le navigateur (tests, démonstration).
+   - SupabaseStore : table « reponses » exposée par l'API REST de Supabase.
+   Les deux exposent la même interface : saveReponse(row, opts), listReponses(session, cle), reinitialiserSession
+   et derniereRemise(session) (remise à zéro des formulaires à distance, 19 octobre 2026).
+   opts.keepalive : l'envoi survit à la fermeture de la page (utilisé quand le téléphone passe en veille).
+   La lecture passe par la fonction lire_reponses (supabase/securite.sql), qui vérifie la clé
+   d'accès côté base : la clé publique du navigateur ne peut plus lire la table directement. */
+
+class LocalStore {
+  constructor() { this.isRemote = false; this.nom = "local"; this.cle = "carto.reponses.locales"; }
+  _lire() { try { return JSON.parse(localStorage.getItem(this.cle) || "[]"); } catch (e) { return []; } }
+  async saveReponse(row) {
+    const all = this._lire();
+    all.push({ ...row, id: "loc-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8), created_at: new Date().toISOString() });
+    localStorage.setItem(this.cle, JSON.stringify(all));
+    return true;
+  }
+  async listReponses(session) { return this._lire().filter(r => !session || r.session === session); }
+  async reinitialiserSession(session) {
+    const all = this._lire(), archive = session + "-archive-" + new Date().toISOString().slice(0, 16).replace("T", "-").replace(":", "h");
+    let n = 0; all.forEach(r => { if (r.session === session) { r.session = archive; n++; } });
+    localStorage.setItem(this.cle, JSON.stringify(all));
+    localStorage.setItem("carto.remise." + session, new Date().toISOString());
+    return { archive, lignes: n };
+  }
+  async derniereRemise(session) { try { return localStorage.getItem("carto.remise." + session); } catch (e) { return undefined; } }
+}
+
+class SupabaseStore {
+  constructor(url, key) {
+    this.isRemote = true; this.nom = "supabase"; this.protege = null;
+    const base = url.replace(/\/$/, "") + "/rest/v1";
+    this.base = base + "/reponses";
+    this.rpc = base + "/rpc/lire_reponses";
+    this.rpcReinit = base + "/rpc/reinitialiser_session";
+    this.rpcRemise = base + "/rpc/derniere_remise";
+    this.headers = { "apikey": key, "Authorization": "Bearer " + key, "Content-Type": "application/json" };
+  }
+  async saveReponse(row, opts) {
+    const res = await fetch(this.base, { method: "POST", headers: { ...this.headers, "Prefer": "return=minimal" }, body: JSON.stringify(row), keepalive: !!(opts && opts.keepalive) });
+    if (!res.ok) throw new Error("Supabase " + res.status + " : " + (await res.text()).slice(0, 200));
+    return true;
+  }
+  // Lecture protégée : lire_reponses(p_session, p_cle) renvoie les lignes de la session si la clé est bonne,
+  // sinon une erreur « cle_invalide ». Tant que la fonction n'est pas installée (404), lecture directe de la table,
+  // qui ne fonctionne que si la règle de lecture publique existe encore.
+  async listReponses(session, cle) {
+    const out = []; const page = 1000; let from = 0;
+    for (;;) {
+      const res = await fetch(this.rpc, {
+        method: "POST",
+        headers: { ...this.headers, "Range-Unit": "items", "Range": from + "-" + (from + page - 1) },
+        body: JSON.stringify({ p_session: session || "", p_cle: cle || "" })
+      });
+      if (res.ok) {
+        const rows = await res.json(); out.push(...rows);
+        if (rows.length < page) break; from += page; continue;
+      }
+      const txt = await res.text();
+      if (res.status === 404 && /PGRST202|lire_reponses/.test(txt)) { this.protege = false; return this._lireDirect(session); }
+      if (/cle_invalide/.test(txt)) { const e = new Error("Clé d'accès incorrecte."); e.code = "cle"; throw e; }
+      throw new Error("Supabase " + res.status + " : " + txt.slice(0, 200));
+    }
+    this.protege = true;
+    return out;
+  }
+  // Remise à zéro : reinitialiser_session(p_session, p_cle) (supabase/reinitialisation.sql) archive les lignes
+  // de la session sous un nouveau nom et renvoie {archive, lignes}. Rien n'est supprimé.
+  async reinitialiserSession(session, cle) {
+    const res = await fetch(this.rpcReinit, { method: "POST", headers: this.headers, body: JSON.stringify({ p_session: session || "", p_cle: cle || "" }) });
+    const txt = await res.text();
+    if (res.ok) { const rows = JSON.parse(txt); const r = Array.isArray(rows) ? rows[0] : rows; return { archive: r && r.archive, lignes: Number(r && r.lignes) || 0 }; }
+    if (res.status === 404 && /PGRST202|reinitialiser_session/.test(txt)) throw new Error("La fonction de remise à zéro n'est pas encore installée dans Supabase : exécuter supabase/reinitialisation.sql.");
+    if (/cle_invalide/.test(txt)) { const e = new Error("Clé d'accès incorrecte."); e.code = "cle"; throw e; }
+    throw new Error("Supabase " + res.status + " : " + txt.slice(0, 200));
+  }
+  // Remise à zéro à distance (supabase/remise-distance.sql) : horodatage de la dernière remise de la session,
+  // null s'il n'y en a jamais eu, undefined si la fonction n'est pas installée ou si la base ne répond pas.
+  async derniereRemise(session) {
+    try {
+      const res = await fetch(this.rpcRemise, { method: "POST", headers: this.headers, body: JSON.stringify({ p_session: session || "" }) });
+      if (!res.ok) return undefined;
+      const v = await res.json();
+      return v === null || v === undefined ? null : String(v);
+    } catch (e) { return undefined; }
+  }
+  async _lireDirect(session) {
+    const out = []; const page = 1000; let from = 0;
+    for (;;) {
+      const url = this.base + "?select=*&order=created_at.asc" + (session ? "&session=eq." + encodeURIComponent(session) : "");
+      const res = await fetch(url, { headers: { ...this.headers, "Range-Unit": "items", "Range": from + "-" + (from + page - 1) } });
+      if (!res.ok && res.status !== 206) throw new Error("Supabase " + res.status);
+      const rows = await res.json(); out.push(...rows);
+      if (rows.length < page) break; from += page;
+    }
+    return out;
+  }
+}
+
+function creerStore(cfg) {
+  if (cfg && cfg.supabaseUrl && cfg.supabaseAnonKey) return new SupabaseStore(cfg.supabaseUrl, cfg.supabaseAnonKey);
+  return new LocalStore();
+}

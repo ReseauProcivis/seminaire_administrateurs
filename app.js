@@ -8,6 +8,9 @@
   const CFG = window.CARTO_CONFIG || {};
   const PARAMS = new URLSearchParams(location.search);
   const SESSION = PARAMS.get("s") || CFG.session || "session";
+  // Copie figée d'une session (dossier archives/, 29 octobre 2026) : config.js porte « archive » et la page ne fait
+  // que lire. Pas de formulaire, pas d'envoi, pas de rafraîchissement ni de remise à zéro.
+  const ARCHIVE = CFG.archive || null;
   const app = document.getElementById("app");
   const bottom = document.getElementById("bottombar");
   const toastEl = document.getElementById("toast");
@@ -82,7 +85,7 @@
     S.participant = (r && r.participant) || null; S.mes = (r && r.mes) || {}; S.file = (r && r.file) || [];
     ssSet("carto.actif", S.participant ? S.participant.id : "");
   }
-  chargerRapport(ssGet("carto.actif"));
+  if (!ARCHIVE) chargerRapport(ssGet("carto.actif"));
   const persist = () => { if (S.participant) lsSet(PREFIXE + S.participant.id, { participant: S.participant, mes: S.mes, file: S.file, maj: Date.now() }); };
 
   const universActifs = p => {
@@ -147,6 +150,7 @@
   /* ---------- Routage ---------- */
   function route() {
     const h = location.hash.replace(/^#\/?/, "");
+    if (ARCHIVE) return h === "aide" ? { name: "aide" } : { name: "resultats" };
     if (h.startsWith("u/")) return { name: "saisie", code: h.slice(2) };
     if (h === "univers") return { name: "univers" };
     if (h === "aide") return { name: "aide" };
@@ -165,6 +169,8 @@
     const of = document.getElementById("ong-form"), or = document.getElementById("ong-res");
     if (of) { of.href = S.participant ? "#/univers" : "#/"; of.classList.toggle("actif", r.name !== "resultats"); }
     if (or) or.classList.toggle("actif", r.name === "resultats");
+    const oa = document.getElementById("ong-aide");
+    if (oa) oa.classList.toggle("actif", r.name === "aide");
     if (r.name !== "resultats" && S.res.timer) { clearInterval(S.res.timer); S.res.timer = null; S.res.actif = false; }
     if (r.name === "accueil") app.innerHTML = vueAccueil();
     else if (r.name === "univers") { if (!S.participant) return go("/"); app.innerHTML = vueUnivers(); }
@@ -604,7 +610,7 @@
     S.res.actif = true;
     S.res.empreinte = null;  // à chaque entrée dans l'onglet, la première lecture redessine même sans nouvelle réponse
     chargerResultats();
-    if (!S.res.timer && (Number(CFG.rafraichissement) || 0) > 0) S.res.timer = setInterval(chargerResultats, Number(CFG.rafraichissement) * 1000);
+    if (!ARCHIVE && !S.res.timer && (Number(CFG.rafraichissement) || 0) > 0) S.res.timer = setInterval(chargerResultats, Number(CFG.rafraichissement) * 1000);
   }
 
   function filtrer(rows) {
@@ -697,7 +703,7 @@
     return s + "</svg>";
   }
 
-  const libMaj = () => (S.res.maj ? "Mis à jour à " + S.res.maj.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "") + (S.store.isRemote ? "" : " · mode local");
+  const libMaj = () => (S.res.maj && !ARCHIVE ? "Mis à jour à " + S.res.maj.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "") + (S.store.isRemote ? "" : " · mode local");
 
   function dessinerResultats() {
     const y = window.scrollY;
@@ -712,11 +718,12 @@
     const propositions = A.univers.flatMap(u => u.propositions.map(x => ({ ...x, u: u.u })));
     const tipP = (r, g) => `${r.r.id} · ${fr(r.r.libelle)}\n${g.nom} : probabilité ${fmt1(r.mp)} · impact ${fmt1(r.mi)} · criticité ${fmt1(r.mc)}\n${r.n} cotation${r.n > 1 ? "s" : ""}`;
     const plusieurs = A.groupes.length > 1;
-    const delai = Number(CFG.rafraichissement) || 0;
+    const delai = ARCHIVE ? 0 : Number(CFG.rafraichissement) || 0;
 
     let h = `
-      <div class="rhead"><div class="nav"><a class="btn lien" href="#/">← Accueil</a><span class="small muted" id="res-maj">${libMaj()}</span></div>
+      <div class="rhead"><div class="nav">${ARCHIVE ? "" : '<a class="btn lien" href="#/">← Accueil</a>'}<span class="small muted" id="res-maj">${libMaj()}</span></div>
         <h1>Résultats de la cartographie</h1><p class="muted">${t(CFG.sessionLabel || "")}${delai ? ` · compilés en direct, rafraîchis toutes les ${delai} secondes` : ""}</p></div>
+      ${ARCHIVE ? `<div class="bandeau ok">${t(ARCHIVE.bandeau || "Archive figée : cette page ne fait que relire une session close.")}</div>` : ""}
       ${S.store.isRemote ? "" : '<div class="bandeau">Mode local : seules les réponses saisies sur cet appareil sont affichées. Branchez Supabase dans config.js pour la collecte partagée.</div>'}
       ${S.store.isRemote && S.store.protege === false ? '<div class="bandeau">Lecture non protégée : la fonction d\'accès n\'est pas encore installée dans Supabase (exécuter supabase/securite.sql). En attendant, toute personne ayant le lien peut lire les réponses.</div>' : ""}
       ${S.res.erreur ? `<div class="bandeau erreur">${/^Réinitialisation/.test(S.res.erreur) ? "" : "Lecture impossible : "}${esc(S.res.erreur)}</div>` : ""}
@@ -724,12 +731,12 @@
         <div><label for="fl-societe">Groupe</label><select id="fl-societe" data-filtre="societe"><option value="">Tous</option>${opts(uniq("societe"), f.societe)}</select></div>
         <div><label for="fl-bloc">Bloc</label><select id="fl-bloc" data-filtre="bloc"><option value="">Tous</option>${S.ref.blocs.map(b => `<option value="${b.id}"${f.bloc === b.id ? " selected" : ""}>${t(b.nom)}</option>`).join("")}</select></div>
         <div><label for="fl-seuil">Seuil d'appétence</label><select id="fl-seuil" data-seuil>${S.ref.echelles.seuils.map(s => `<option value="${s.v}"${s.v === seuil ? " selected" : ""}>${t(s.l)}</option>`).join("")}</select></div>
-        <button class="btn" data-act="rafraichir">Actualiser</button>
+        ${ARCHIVE ? "" : '<button class="btn" data-act="rafraichir">Actualiser</button>'}
         <button class="btn" data-act="export-brut">Exporter les réponses (CSV)</button>
         <button class="btn" data-act="export-risques">Synthèse risques (CSV)</button>
       </div></div>
       ${S.res.archive ? `<div class="bandeau ok">Session réinitialisée à ${S.res.archive.heure} : ${S.res.archive.lignes} réponse${S.res.archive.lignes > 1 ? "s" : ""} archivée${S.res.archive.lignes > 1 ? "s" : ""} sous « ${esc(S.res.archive.nom)} » (<a href="./?s=${encodeURIComponent(S.res.archive.nom)}#/resultats">consulter l'archive</a>). Une sauvegarde CSV a été téléchargée.</div>` : ""}
-      ${panneauReinit(all)}`;
+      ${ARCHIVE ? "" : panneauReinit(all)}`;
 
     if (!rows.length) { h += '<div class="vide">Aucune cotation pour le moment. Les réponses arrivent en direct : la page se met à jour automatiquement dès la première.</div>'; app.innerHTML = h; window.scrollTo(0, y); return; }
 
@@ -911,6 +918,7 @@
     S.store = creerStore(CFG);
     setStatut(S.store.isRemote ? "ok" : "off", S.store.isRemote ? "Connecté" : "Mode local");
     render();
+    if (ARCHIVE) return;  // copie figée : rien à envoyer, aucune remise à zéro à surveiller
     await verifierRemise();
     viderFile(); setInterval(viderFile, 30000);
     setInterval(verifierRemise, 5000);

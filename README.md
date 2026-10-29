@@ -46,6 +46,10 @@ Remise à distance (19 octobre 2026, `supabase/remise-distance.sql`) : le même 
 
 La **sauvegarde automatique** (`.github/workflows/sauvegarde.yml`) lit toutes les réponses, archives comprises, et les dépose sur le Drive Leviia dans `Cartographie des risques/<date> <session>/` : `reponses.csv` (dernière réponse par participant et univers, format long) et `reponses-brutes.json` (toutes les lignes), plus `derniere-sauvegarde.txt`. Elle tourne toutes les six heures, toutes les dix minutes le 20 octobre 2026 entre 7 h et 19 h, et à la demande depuis l'onglet Actions du dépôt. Secrets du dépôt : `RESULTATS_CLE`, `LEVIIA_URL`, `LEVIIA_USER`, `LEVIIA_TOKEN` (mot de passe d'application Leviia, révocable depuis cloud.leviia.com). Tant que `lire_toutes_reponses` n'est pas installée, seule la session courante est sauvegardée.
 
+## Archives figées
+
+`archives/seminaire-2026-10-20/` garde la carto telle que remplie au séminaire du 20 octobre 2026 : https://reseauprocivis.github.io/seminaire_administrateurs/archives/seminaire-2026-10-20/?cle=Carto-Procivis#/resultats . Les réponses ont été archivées le 29 octobre dans Supabase (`seminaire-administrateurs-2026-10-20-v6-archive-2026-10-29-18h42`) et le dossier contient sa propre copie de `app.js`, `styles.css` et du référentiel v6 : les évolutions de la page principale ne la touchent pas. Son `config.js` porte `archive`, qui met l'application en lecture seule (résultats et cadre de référence, sans formulaire, sans rafraîchissement ni remise à zéro). La clé d'accès reste demandée. Pour figer une autre session, copier ce dossier et changer `session`, `sessionLabel` et `archive.bandeau`.
+
 ## Référentiel (version 6, 14 octobre 2026)
 
 - **Nomenclature.** Les mesures de maîtrise s'appellent `CODE-M1`, `CODE-M2`... et les risques `CODE-R1`, `CODE-R2`..., numérotés sans trou dans l'ordre d'affichage de chaque chapitre (`CODE` est le code du chapitre, par exemple `GOV`). Un identifiant supprimé n'est jamais réutilisé. Une fois la collecte ouverte, plus aucune renumérotation : les réponses sont enregistrées avec ces identifiants.

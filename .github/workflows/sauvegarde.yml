@@ -1,14 +1,14 @@
 # Sauvegarde automatique des réponses sur le Drive Leviia (WebDAV), toutes sessions confondues,
 # archives comprises : dossier « Cartographie des risques / <date> <session> / » avec reponses.csv
 # (dernière réponse par participant et univers, format long) et reponses-brutes.json (toutes les lignes).
-# Secrets du dépôt : SUPABASE_URL, SUPABASE_ANON_KEY, RESULTATS_CLE (clé d'accès des résultats),
+# Secrets du dépôt : SUPABASE_URL, SUPABASE_ANON_KEY, RESULTATS_CLE (base du réseau), PRES_SUPABASE_URL,
+# PRES_SUPABASE_ANON_KEY, PRES_RESULTATS_CLE (base du séminaire des présidents),
 # LEVIIA_URL (endpoint WebDAV du Drive), LEVIIA_USER, LEVIIA_TOKEN (mot de passe d'application).
 # Lancement manuel possible : onglet Actions du dépôt > Sauvegarde Leviia > Run workflow.
 name: Sauvegarde Leviia
 on:
   schedule:
-    - cron: "23 */6 * * *"       # toutes les six heures
-    - cron: "*/10 5-17 20 10 *"  # le 20 octobre 2026 (séminaire), toutes les dix minutes de 7 h à 19 h, heure de Paris
+    - cron: "23 3 * * *"         # une fois par jour, vers 4 h 30, heure de Paris (toutes les six heures jusqu'au 23 novembre 2026)
     - cron: "*/30 13-17 24 11 *" # le 24 novembre 2026 (séminaire des présidents), toutes les trente minutes de 14 h à 19 h, heure de Paris
   workflow_dispatch:
 jobs:
@@ -22,6 +22,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           RESULTATS_CLE: ${{ secrets.RESULTATS_CLE }}
+          PRES_SUPABASE_URL: ${{ secrets.PRES_SUPABASE_URL }}
+          PRES_SUPABASE_ANON_KEY: ${{ secrets.PRES_SUPABASE_ANON_KEY }}
+          PRES_RESULTATS_CLE: ${{ secrets.PRES_RESULTATS_CLE }}
           LEVIIA_URL: ${{ secrets.LEVIIA_URL }}
           LEVIIA_USER: ${{ secrets.LEVIIA_USER }}
           LEVIIA_TOKEN: ${{ secrets.LEVIIA_TOKEN }}

@@ -7,8 +7,12 @@ puis dépose pour chaque session, archives comprises, dans « Cartographie des r
   - reponses-brutes.json  toutes les lignes de la session, telles qu'enregistrées
 et à la racine du dossier un fichier derniere-sauvegarde.txt.
 
-Bibliothèque standard seulement. Variables d'environnement : SUPABASE_URL, SUPABASE_ANON_KEY, RESULTATS_CLE,
-LEVIIA_URL, LEVIIA_USER, LEVIIA_TOKEN. Sans SUPABASE_URL ou LEVIIA_URL, le script ne fait rien.
+Deux bases sont lues depuis le 23 novembre 2026 : celle du réseau (SUPABASE_URL, SUPABASE_ANON_KEY, RESULTATS_CLE)
+et celle du séminaire des présidents (PRES_SUPABASE_URL, PRES_SUPABASE_ANON_KEY, PRES_RESULTATS_CLE). Une base
+qui ne répond pas n'empêche pas de sauvegarder l'autre ; le script sort alors en erreur après avoir déposé le reste.
+
+Bibliothèque standard seulement. Autres variables : LEVIIA_URL, LEVIIA_USER, LEVIIA_TOKEN. Sans base ni Leviia,
+le script ne fait rien.
 Tant que lire_toutes_reponses n'est pas installée (supabase/reinitialisation.sql), seule la session de config.js
 est sauvegardée, par lire_reponses."""
 import base64, csv, io, json, os, re, sys, urllib.error, urllib.parse, urllib.request
@@ -18,9 +22,16 @@ RACINE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file_
 DOSSIER = "Cartographie des risques"
 PARIS = timezone(timedelta(hours=2))  # heure d'été ; la date du dossier n'a pas besoin de plus de précision
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
-ANON = os.environ.get("SUPABASE_ANON_KEY", "")
-CLE = os.environ.get("RESULTATS_CLE", "")
+def base_env(nom, prefixe):
+    return {"nom": nom, "url": os.environ.get(prefixe + "SUPABASE_URL", "").rstrip("/"),
+            "anon": os.environ.get(prefixe + "SUPABASE_ANON_KEY", ""), "cle": os.environ.get(prefixe + "RESULTATS_CLE", "")}
+
+
+BASES = [b for b in (base_env("réseau", ""), base_env("présidents", "PRES_")) if b["url"] and b["anon"] and b["cle"]]
+
+
+class Echec(Exception):
+    """Une base n'a pas pu être lue : le message dit pourquoi."""
 LEVIIA_URL = os.environ.get("LEVIIA_URL", "").rstrip("/") + "/"
 LEVIIA_AUTH = "Basic " + base64.b64encode((os.environ.get("LEVIIA_USER", "") + ":" + os.environ.get("LEVIIA_TOKEN", "")).encode()).decode()
 
@@ -36,7 +47,7 @@ def niveau(c):
 MAX_LIGNES = 300000  # garde-fou : au-delà, le script s'arrête au lieu de lire sans fin
 
 
-def supabase_rpc(fonction, corps):
+def supabase_rpc(base, fonction, corps):
     """Appelle une fonction Supabase en paginant par 1000 lignes. Renvoie (lignes, code HTTP d'erreur ou None).
 
     La pagination passe par ?limit=&offset= dans l'adresse. Jusqu'au 23 novembre 2026 elle passait par l'en-tête
@@ -47,16 +58,16 @@ def supabase_rpc(fonction, corps):
     qu'une page n'apporte aucune ligne nouvelle, et un plafond de lignes."""
     out, page, depuis, vus = [], 1000, 0, set()
     while True:
-        url = f"{SUPABASE_URL}/rest/v1/rpc/{fonction}?limit={page}&offset={depuis}&order=session.asc,created_at.asc,id.asc"
+        url = f"{base['url']}/rest/v1/rpc/{fonction}?limit={page}&offset={depuis}&order=session.asc,created_at.asc,id.asc"
         req = urllib.request.Request(url, data=json.dumps(corps).encode(), method="POST",
-                                     headers={"apikey": ANON, "Authorization": "Bearer " + ANON, "Content-Type": "application/json"})
+                                     headers={"apikey": base["anon"], "Authorization": "Bearer " + base["anon"], "Content-Type": "application/json"})
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
                 rows = json.loads(r.read().decode() or "[]")
         except urllib.error.HTTPError as e:
             txt = e.read().decode(errors="replace")[:300]
             if "cle_invalide" in txt:
-                sys.exit("Clé d'accès des résultats refusée par Supabase (secret RESULTATS_CLE).")
+                raise Echec("clé d'accès des résultats refusée par Supabase (secret RESULTATS_CLE de cette base)")
             return out, (e.code, txt)
         nouvelles = [x for x in rows if x.get("id") not in vus]
         vus.update(x.get("id") for x in nouvelles)
@@ -64,10 +75,10 @@ def supabase_rpc(fonction, corps):
         if len(rows) < page:
             return out, None
         if not nouvelles:
-            sys.exit(f"Pagination sans effet sur {fonction} : la page à partir de la ligne {depuis} n'apporte rien de nouveau. Arrêt pour ne pas relire la table en boucle.")
+            raise Echec(f"pagination sans effet sur {fonction} : la page à partir de la ligne {depuis} n'apporte rien de nouveau, arrêt pour ne pas relire la table en boucle")
         depuis += page
         if depuis >= MAX_LIGNES:
-            sys.exit(f"Plus de {MAX_LIGNES} lignes dans {fonction} : arrêt, la sauvegarde est à revoir.")
+            raise Echec(f"plus de {MAX_LIGNES} lignes dans {fonction} : arrêt, la sauvegarde est à revoir")
 
 
 def session_config():
@@ -79,18 +90,18 @@ def session_config():
         return ""
 
 
-def lire_toutes_reponses():
-    rows, err = supabase_rpc("lire_toutes_reponses", {"p_cle": CLE})
+def lire_toutes_reponses(base):
+    rows, err = supabase_rpc(base, "lire_toutes_reponses", {"p_cle": base["cle"]})
     if err is None:
         return rows, "lire_toutes_reponses"
     if err[0] == 404:
         s = session_config()
         print(f"lire_toutes_reponses absente (exécuter supabase/reinitialisation.sql) : repli sur la session « {s} »")
-        rows, err2 = supabase_rpc("lire_reponses", {"p_session": s, "p_cle": CLE})
+        rows, err2 = supabase_rpc(base, "lire_reponses", {"p_session": s, "p_cle": base["cle"]})
         if err2 is not None:
-            sys.exit(f"Lecture impossible : HTTP {err2[0]} {err2[1]}")
+            raise Echec(f"lecture impossible : HTTP {err2[0]} {err2[1]}")
         return rows, "lire_reponses"
-    sys.exit(f"Lecture impossible : HTTP {err[0]} {err[1]}")
+    raise Echec(f"lecture impossible : HTTP {err[0]} {err[1]}")
 
 
 def charger_referentiel(chemin="referentiel.json"):
@@ -182,14 +193,26 @@ def nom_dossier_session(session, rows):
 
 
 def main():
-    if not SUPABASE_URL or not ANON or not CLE or LEVIIA_URL == "/" or not os.environ.get("LEVIIA_TOKEN"):
+    if not BASES or LEVIIA_URL == "/" or not os.environ.get("LEVIIA_TOKEN"):
         print("Secrets absents, rien à faire")
         return
-    rows, source = lire_toutes_reponses()
+    rows, lues, echecs = [], [], []
+    for base in BASES:
+        try:
+            lignes_base, source = lire_toutes_reponses(base)
+        except Echec as e:
+            echecs.append(f"base {base['nom']} : {e}")
+            print(f"ÉCHEC, base {base['nom']} : {e}")
+            continue
+        print(f"Base {base['nom']} : {len(lignes_base)} lignes lues par {source}")
+        lues.append(f"{base['nom']} ({len(lignes_base)} lignes)")
+        rows.extend(lignes_base)
+    if not lues:
+        sys.exit("Aucune base lue : " + " ; ".join(echecs))
     sessions = {}
     for r in rows:
         sessions.setdefault(r.get("session") or "sans-session", []).append(r)
-    print(f"{len(rows)} lignes lues par {source}, {len(sessions)} session(s)")
+    print(f"{len(rows)} lignes, {len(sessions)} session(s)")
     libelles = charger_referentiel()
     # Séminaire des présidents (24 novembre 2026) et pages des SACICAP : référentiel v7, rangé dans presidents/
     libelles_v7 = charger_referentiel("presidents/referentiel.json") or libelles
@@ -203,7 +226,10 @@ def main():
         deposer(f"{d}/reponses-brutes.json", json.dumps(lignes, ensure_ascii=False, indent=1), "application/json; charset=utf-8")
         print(f"  {d} : {len(lignes)} lignes, {len(dernieres(lignes))} réponses")
     deposer(f"{DOSSIER}/derniere-sauvegarde.txt",
-            f"Dernière sauvegarde : {maintenant} (heure de Paris)\n{len(rows)} lignes, {len(sessions)} session(s), source {source}\n", "text/plain; charset=utf-8")
+            f"Dernière sauvegarde : {maintenant} (heure de Paris)\n{len(rows)} lignes, {len(sessions)} session(s)\n"
+            f"Bases lues : {', '.join(lues)}\n" + ("Bases en échec : " + " ; ".join(echecs) + "\n" if echecs else ""), "text/plain; charset=utf-8")
+    if echecs:
+        sys.exit("Sauvegarde partielle : " + " ; ".join(echecs))
     print("Sauvegarde terminée")
 
 

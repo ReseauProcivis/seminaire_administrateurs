@@ -11,7 +11,7 @@
   // Copie figée d'une session (dossier archives/, 29 octobre 2026) : config.js porte « archive » et la page ne fait
   // que lire. Pas de formulaire, pas d'envoi, pas de rafraîchissement ni de remise à zéro.
   const ARCHIVE = CFG.archive || null;
-  // Une page sœur dans un sous-dossier (présidents, 24 novembre 2026) partage ce script : config.js y porte
+  // La page du séminaire des présidents (dépôt seminaire_presidents, 24 novembre 2026) reprend ce script : config.js y porte
   // « seminaire » (le public nommé à l'accueil) et « stockage » (rangement à part dans le navigateur, pour que
   // les rapports d'un séminaire ne se mêlent pas à ceux d'un autre sur le même ordinateur).
   const SEMINAIRE = CFG.seminaire || "séminaire des administrateurs";

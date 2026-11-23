@@ -2,33 +2,17 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cartographie des risques - séminaire des présidents</title>
-<meta name="description" content="Cartographie des risques du réseau Procivis : évaluation de la maîtrise et cotation des risques par les présidents de SACICAP, séminaire du 24 novembre 2026.">
 <meta name="robots" content="noindex">
-<link rel="icon" type="image/png" href="../assets/isotype-procivis.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../styles.css?v=2026-11-23-base">
+<!-- La page du séminaire des présidents a sa propre adresse depuis le 23 novembre 2026 (dépôt seminaire_presidents).
+     Cette page y renvoie en gardant les paramètres de l'adresse. referentiel.json reste dans ce dossier :
+     la sauvegarde automatique y lit les libellés du référentiel v7. -->
+<script>location.replace("https://reseauprocivis.github.io/seminaire_presidents/" + location.search + location.hash);</script>
+<meta http-equiv="refresh" content="1; url=https://reseauprocivis.github.io/seminaire_presidents/">
 </head>
 <body>
-<header class="topbar">
-  <div class="topbar-in">
-    <a href="#/" aria-label="Accueil"><img src="../assets/logo-procivis.png" alt="Procivis"></a>
-    <div class="titre">Cartographie des risques</div>
-    <div class="statut" id="statut"><span class="dot"></span><span id="statut-txt">Chargement</span></div>
-  </div>
-  <nav class="onglets" aria-label="Sections"><a id="ong-form" href="#/">Formulaire</a><a id="ong-res" href="#/resultats">Résultats</a></nav>
-</header>
-<main id="app" class="page" aria-live="polite"></main>
-<div id="bottombar"></div>
-<div class="toast" id="toast" role="status"></div>
-<div class="tooltip" id="tooltip" role="tooltip"></div>
-<!-- Le script, le stockage et la feuille de style sont ceux de la page principale (dossier parent) ; config.js,
-     societes.json et referentiel.json sont propres à ce dossier. Numéro de version : à changer à chaque mise en ligne pour que les navigateurs ne gardent pas un ancien script en cache -->
-<script src="config.js?v=2026-11-23-base"></script>
-<script src="../store.js?v=2026-11-23-base"></script>
-<script src="../app.js?v=2026-11-23-base"></script>
+<p>La cartographie des risques du séminaire des présidents est à cette adresse :
+<a href="https://reseauprocivis.github.io/seminaire_presidents/">https://reseauprocivis.github.io/seminaire_presidents/</a></p>
 </body>
 </html>

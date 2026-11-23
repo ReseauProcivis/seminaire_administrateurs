@@ -11,6 +11,11 @@
   // Copie figée d'une session (dossier archives/, 29 octobre 2026) : config.js porte « archive » et la page ne fait
   // que lire. Pas de formulaire, pas d'envoi, pas de rafraîchissement ni de remise à zéro.
   const ARCHIVE = CFG.archive || null;
+  // Une page sœur dans un sous-dossier (présidents, 24 novembre 2026) partage ce script : config.js y porte
+  // « seminaire » (le public nommé à l'accueil) et « stockage » (rangement à part dans le navigateur, pour que
+  // les rapports d'un séminaire ne se mêlent pas à ceux d'un autre sur le même ordinateur).
+  const SEMINAIRE = CFG.seminaire || "séminaire des administrateurs";
+  const NS = "carto." + (CFG.stockage ? CFG.stockage + "." : "");
   const app = document.getElementById("app");
   const bottom = document.getElementById("bottombar");
   const toastEl = document.getElementById("toast");
@@ -54,7 +59,7 @@
      dans localStorage sous « carto.r.<id> » et chaque onglet retient dans sessionStorage celui qu'il remplit.
      Deux onglets ou deux fenêtres du même ordinateur ne partagent plus les mêmes cotations, et « Nouveau
      rapport » crée toujours un nouveau participant (avant, un seul rapport par navigateur, réécrit à chaque fois). */
-  const PREFIXE = "carto.r.";
+  const PREFIXE = NS + "r.", CLE_ACTIF = NS + "actif";
   const ssGet = k => { try { return sessionStorage.getItem(k) || ""; } catch (e) { return ""; } };
   const ssSet = (k, v) => { try { if (v) sessionStorage.setItem(k, v); else sessionStorage.removeItem(k); } catch (e) { /* stockage indisponible */ } };
   const lsDel = k => { try { localStorage.removeItem(k); } catch (e) { /* stockage indisponible */ } };
@@ -70,6 +75,7 @@
   }
   // Ancien format (un seul rapport par navigateur) : rangé dans la liste des rapports, sans être rouvert d'office
   (function migrer() {
+    if (CFG.stockage) return;
     const p = lsGet("carto.participant", null);
     if (p && p.id && !lsGet(PREFIXE + p.id, null)) lsSet(PREFIXE + p.id, { participant: p, mes: lsGet("carto.mesReponses", {}), file: lsGet("carto.fileAttente", []), maj: Date.now() });
     ["carto.participant", "carto.mesReponses", "carto.fileAttente"].forEach(lsDel);
@@ -83,9 +89,9 @@
   function chargerRapport(id) {
     const r = id ? lsGet(PREFIXE + id, null) : null;
     S.participant = (r && r.participant) || null; S.mes = (r && r.mes) || {}; S.file = (r && r.file) || [];
-    ssSet("carto.actif", S.participant ? S.participant.id : "");
+    ssSet(CLE_ACTIF, S.participant ? S.participant.id : "");
   }
-  if (!ARCHIVE) chargerRapport(ssGet("carto.actif"));
+  if (!ARCHIVE) chargerRapport(ssGet(CLE_ACTIF));
   const persist = () => { if (S.participant) lsSet(PREFIXE + S.participant.id, { participant: S.participant, mes: S.mes, file: S.file, maj: Date.now() }); };
 
   const universActifs = p => {
@@ -193,7 +199,7 @@
     const mets = cur.metiers && cur.metiers.length ? cur.metiers : metiers.map(m => m.id);
     const intro = `
       <div class="intro-txt">
-        <p class="lead">Un autodiagnostic pour le séminaire des administrateurs : il couvre tous les métiers du réseau Procivis et les règles propres au statut de SACICAP. Pour chaque univers, il rappelle les mesures de maîtrise attendues, cote les risques et les compare à l'appétence au risque choisie par le groupe.</p>
+        <p class="lead">Un autodiagnostic pour le ${t(SEMINAIRE)} : il couvre tous les métiers du réseau Procivis et les règles propres au statut de SACICAP. Pour chaque univers, il rappelle les mesures de maîtrise attendues, cote les risques et les compare à l'appétence au risque choisie par le groupe.</p>
         <div class="etapes">
           <div class="etape"><b>1</b><p><strong>Choisir le périmètre.</strong> « Réseau » pour la vision d'ensemble du séminaire. « SACICAP » pour décliner ensuite société par société, avec les seuls métiers exercés.</p></div>
           <div class="etape"><b>2</b><p><strong>Coter.</strong> Pour chaque univers, prenez connaissance des mesures de maîtrise, puis cotez chaque risque : probabilité et impact de 1 à 4, en tenant compte de ce qui existe déjà. Décidez pour chacun : accepter ou réduire.</p></div>
@@ -248,7 +254,7 @@
     }
     rapports += "</section>";
     return `
-      <div class="hero"><p class="eyebrow">Réseau Procivis · séminaire des administrateurs</p><h1>Cartographie des risques Procivis</h1><p class="muted">${t(CFG.sessionLabel || "")}</p></div>
+      <div class="hero"><p class="eyebrow">Réseau Procivis · ${t(SEMINAIRE)}</p><h1>Cartographie des risques Procivis</h1><p class="muted">${t(CFG.sessionLabel || "")}</p></div>
       <section class="intro">${intro}${form}</section>
       ${rapports}`;
   }
@@ -264,7 +270,7 @@
     // « remise » : dernière remise à zéro connue à la création ("?" si la base n'a pas encore répondu)
     const remise = S.participant ? S.participant.remise : (remiseConnue === undefined ? "?" : remiseConnue);
     S.participant = { id: (S.participant && S.participant.id) || uid(), societe, fonction, prenom, perimetre, metiers, remise };
-    ssSet("carto.actif", S.participant.id); persist(); go("/univers");
+    ssSet(CLE_ACTIF, S.participant.id); persist(); go("/univers");
   }
 
   /* ---------- Liste des univers ---------- */

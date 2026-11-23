@@ -9,10 +9,12 @@ on:
   schedule:
     - cron: "23 */6 * * *"       # toutes les six heures
     - cron: "*/10 5-17 20 10 *"  # le 20 octobre 2026 (séminaire), toutes les dix minutes de 7 h à 19 h, heure de Paris
+    - cron: "*/30 13-17 24 11 *" # le 24 novembre 2026 (séminaire des présidents), toutes les trente minutes de 14 h à 19 h, heure de Paris
   workflow_dispatch:
 jobs:
   sauvegarde:
     runs-on: ubuntu-latest
+    timeout-minutes: 10   # une sauvegarde prend quelques secondes ; au-delà, c'est une boucle : on coupe
     steps:
       - uses: actions/checkout@v4
       - name: Export des réponses et dépôt sur Leviia

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cartographie des risques - séminaire des présidents</title>
+<meta name="description" content="Cartographie des risques du réseau Procivis : évaluation de la maîtrise et cotation des risques par les présidents de SACICAP, séminaire du 24 novembre 2026.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="../assets/isotype-procivis.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css?v=2026-11-23-presidents">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a href="#/" aria-label="Accueil"><img src="../assets/logo-procivis.png" alt="Procivis"></a>
+    <div class="titre">Cartographie des risques</div>
+    <div class="statut" id="statut"><span class="dot"></span><span id="statut-txt">Chargement</span></div>
+  </div>
+  <nav class="onglets" aria-label="Sections"><a id="ong-form" href="#/">Formulaire</a><a id="ong-res" href="#/resultats">Résultats</a></nav>
+</header>
+<main id="app" class="page" aria-live="polite"></main>
+<div id="bottombar"></div>
+<div class="toast" id="toast" role="status"></div>
+<div class="tooltip" id="tooltip" role="tooltip"></div>
+<!-- Le script, le stockage et la feuille de style sont ceux de la page principale (dossier parent) ; config.js,
+     societes.json et referentiel.json sont propres à ce dossier. Numéro de version : à changer à chaque mise en ligne pour que les navigateurs ne gardent pas un ancien script en cache -->
+<script src="config.js?v=2026-11-23-presidents"></script>
+<script src="../store.js?v=2026-11-23-presidents"></script>
+<script src="../app.js?v=2026-11-23-presidents"></script>
+</body>
+</html>

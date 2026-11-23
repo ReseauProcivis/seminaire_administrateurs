@@ -46,16 +46,20 @@ class SupabaseStore {
   // sinon une erreur « cle_invalide ». Tant que la fonction n'est pas installée (404), lecture directe de la table,
   // qui ne fonctionne que si la règle de lecture publique existe encore.
   async listReponses(session, cle) {
-    const out = []; const page = 1000; let from = 0;
+    // Pagination par l'adresse (?limit=&offset=) : l'API ignore l'en-tête Range sur un appel de fonction en POST.
+    // Garde-fou : si une page n'apporte aucune ligne nouvelle, on s'arrête au lieu de relire la base sans fin.
+    const out = []; const page = 1000; let from = 0; const vus = new Set();
     for (;;) {
-      const res = await fetch(this.rpc, {
+      const res = await fetch(this.rpc + "?limit=" + page + "&offset=" + from + "&order=participant_id.asc,univers.asc", {
         method: "POST",
-        headers: { ...this.headers, "Range-Unit": "items", "Range": from + "-" + (from + page - 1) },
+        headers: this.headers,
         body: JSON.stringify({ p_session: session || "", p_cle: cle || "" })
       });
       if (res.ok) {
-        const rows = await res.json(); out.push(...rows);
-        if (rows.length < page) break; from += page; continue;
+        const rows = await res.json();
+        const neuves = rows.filter(r => !vus.has(r.id));
+        neuves.forEach(r => vus.add(r.id)); out.push(...neuves);
+        if (rows.length < page || !neuves.length) break; from += page; continue;
       }
       const txt = await res.text();
       if (res.status === 404 && /PGRST202|lire_reponses/.test(txt)) { this.protege = false; return this._lireDirect(session); }

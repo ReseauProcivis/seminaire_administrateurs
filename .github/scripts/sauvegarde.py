@@ -33,13 +33,23 @@ def niveau(c):
     return "Faible" if c <= 3 else "Modéré" if c <= 6 else "Élevé" if c <= 9 else "Critique"
 
 
+MAX_LIGNES = 300000  # garde-fou : au-delà, le script s'arrête au lieu de lire sans fin
+
+
 def supabase_rpc(fonction, corps):
-    """Appelle une fonction Supabase en paginant par 1000 lignes. Renvoie (lignes, code HTTP d'erreur ou None)."""
-    out, page, depuis = [], 1000, 0
+    """Appelle une fonction Supabase en paginant par 1000 lignes. Renvoie (lignes, code HTTP d'erreur ou None).
+
+    La pagination passe par ?limit=&offset= dans l'adresse. Jusqu'au 23 novembre 2026 elle passait par l'en-tête
+    Range, que l'API ignore sur un appel de fonction en POST : dès que la table a dépassé 1000 lignes (6 novembre),
+    chaque page renvoyait les mêmes 1000 premières lignes et la boucle ne s'arrêtait plus. Le job a relu la table
+    en continu pendant près de deux heures, quatre fois par jour, jusqu'à épuiser le quota de données sortantes
+    du projet (erreur 402 « exceed_egress_quota »). Trois protections : la pagination par l'adresse, l'arrêt dès
+    qu'une page n'apporte aucune ligne nouvelle, et un plafond de lignes."""
+    out, page, depuis, vus = [], 1000, 0, set()
     while True:
-        req = urllib.request.Request(f"{SUPABASE_URL}/rest/v1/rpc/{fonction}", data=json.dumps(corps).encode(), method="POST",
-                                     headers={"apikey": ANON, "Authorization": "Bearer " + ANON, "Content-Type": "application/json",
-                                              "Range-Unit": "items", "Range": f"{depuis}-{depuis + page - 1}"})
+        url = f"{SUPABASE_URL}/rest/v1/rpc/{fonction}?limit={page}&offset={depuis}&order=session.asc,created_at.asc,id.asc"
+        req = urllib.request.Request(url, data=json.dumps(corps).encode(), method="POST",
+                                     headers={"apikey": ANON, "Authorization": "Bearer " + ANON, "Content-Type": "application/json"})
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
                 rows = json.loads(r.read().decode() or "[]")
@@ -48,10 +58,16 @@ def supabase_rpc(fonction, corps):
             if "cle_invalide" in txt:
                 sys.exit("Clé d'accès des résultats refusée par Supabase (secret RESULTATS_CLE).")
             return out, (e.code, txt)
-        out.extend(rows)
+        nouvelles = [x for x in rows if x.get("id") not in vus]
+        vus.update(x.get("id") for x in nouvelles)
+        out.extend(nouvelles)
         if len(rows) < page:
             return out, None
+        if not nouvelles:
+            sys.exit(f"Pagination sans effet sur {fonction} : la page à partir de la ligne {depuis} n'apporte rien de nouveau. Arrêt pour ne pas relire la table en boucle.")
         depuis += page
+        if depuis >= MAX_LIGNES:
+            sys.exit(f"Plus de {MAX_LIGNES} lignes dans {fonction} : arrêt, la sauvegarde est à revoir.")
 
 
 def session_config():
@@ -77,10 +93,10 @@ def lire_toutes_reponses():
     sys.exit(f"Lecture impossible : HTTP {err[0]} {err[1]}")
 
 
-def charger_referentiel():
+def charger_referentiel(chemin="referentiel.json"):
     libelles = {}
     try:
-        with open(os.path.join(RACINE, "referentiel.json"), encoding="utf-8") as f:
+        with open(os.path.join(RACINE, chemin), encoding="utf-8") as f:
             ref = json.load(f)
         for u in ref.get("univers", []):
             for q in u.get("questions", []):
@@ -175,12 +191,15 @@ def main():
         sessions.setdefault(r.get("session") or "sans-session", []).append(r)
     print(f"{len(rows)} lignes lues par {source}, {len(sessions)} session(s)")
     libelles = charger_referentiel()
+    # Séminaire des présidents (24 novembre 2026) et pages des SACICAP : référentiel v7, rangé dans presidents/
+    libelles_v7 = charger_referentiel("presidents/referentiel.json") or libelles
     dossier(DOSSIER)
     maintenant = datetime.now(timezone.utc).astimezone(PARIS).strftime("%d/%m/%Y %H:%M")
     for session, lignes in sorted(sessions.items()):
         d = f"{DOSSIER}/{nom_dossier_session(session, lignes)}"
         dossier(d)
-        deposer(f"{d}/reponses.csv", csv_long(lignes, libelles), "text/csv; charset=utf-8")
+        v7 = session.startswith(("seminaire-presidents", "sacicap-"))
+        deposer(f"{d}/reponses.csv", csv_long(lignes, libelles_v7 if v7 else libelles), "text/csv; charset=utf-8")
         deposer(f"{d}/reponses-brutes.json", json.dumps(lignes, ensure_ascii=False, indent=1), "application/json; charset=utf-8")
         print(f"  {d} : {len(lignes)} lignes, {len(dernieres(lignes))} réponses")
     deposer(f"{DOSSIER}/derniere-sauvegarde.txt",

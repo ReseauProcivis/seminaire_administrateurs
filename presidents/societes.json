@@ -1,0 +1,15 @@
+{
+ "_commentaire": "Menu « Structure » du séminaire des présidents du 24 novembre 2026 : trois groupes, comme au séminaire des administrateurs. L'ordre fixe la couleur des points de chaque groupe sur la matrice des résultats.",
+ "societes": [
+  "Groupe 1",
+  "Groupe 2",
+  "Groupe 3"
+ ],
+ "fonctions": [
+  "Présidence",
+  "Administrateur ou administratrice",
+  "Direction générale",
+  "Collaborateur ou collaboratrice",
+  "Autre"
+ ]
+}
